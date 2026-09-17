@@ -1,0 +1,13 @@
+{
+  "eventId": "lakshya-2.0",
+  "vertical": "Air Rifle",
+  "dateKey": "2026-09-26",
+  "dateLabel": "26 September 2026",
+  "timeLabel": "08:00 - 09:00 HRS",
+  "startMinutes": 480,
+  "endMinutes": 540,
+  "capacity": 60,
+  "booked": 0,
+  "isActive": true,
+  "sortOrder": 480
+}

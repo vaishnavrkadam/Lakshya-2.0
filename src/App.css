@@ -1,0 +1,61 @@
+/* --- HERO BULLET SHOOT & REVEAL ANIMATIONS --- */
+@keyframes bulletShoot {
+  0% {
+    left: 0%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes titleReveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+.animate-bullet-shoot {
+  animation: bulletShoot 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: left, opacity;
+}
+
+.animate-title-reveal {
+  animation: titleReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: clip-path;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bullet-shoot {
+    display: none !important;
+  }
+  .animate-title-reveal {
+    animation: none !important;
+    clip-path: none !important;
+  }
+}
+
+/* --- PRINT STYLES FOR EVENT PASS --- */
+@media print {
+  nav, footer, button, .no-print {
+    display: none !important;
+  }
+  body, main {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print-pass-card {
+    border: 2px solid #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    margin: 20px auto !important;
+  }
+}

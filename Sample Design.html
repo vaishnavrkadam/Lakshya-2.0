@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><title>LAKSHYA 2.0</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Chivo:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline-variant": "#5c403c", "primary-fixed-dim": "#ffb4ab", "error-container": "#93000a", "on-primary": "#690005", "secondary-container": "#d3000e", "error": "#ffb4ab", "tertiary-container": "#a06500", "tertiary-fixed": "#ffddb8", "tertiary-fixed-dim": "#ffb95f", "optic-subdued": "#64748B", "on-surface-variant": "#e6bdb8", "on-secondary": "#690003", "primary-container": "#dc2626", "surface-container-low": "#1a1b20", "surface-container-highest": "#343439", "secondary-fixed-dim": "#ffb4aa", "carbon-surface": "#12131A", "on-primary-fixed-variant": "#93000b", "inverse-surface": "#e3e2e8", "on-background": "#e3e2e8", "on-secondary-fixed": "#410001", "on-tertiary-container": "#fff7f1", "target-amber": "#F59E0B", "surface-variant": "#343439", "on-secondary-fixed-variant": "#930006", "inverse-primary": "#bf0715", "on-primary-container": "#fff6f5", "on-tertiary": "#472a00", "on-tertiary-fixed": "#2a1700", "carbon-border": "#282B3A", "outline": "#ac8884", "inverse-on-surface": "#2f3035", "surface": "#121317", "surface-dim": "#121317", "carbon-elevated": "#1A1C26", "carbon-base": "#0B0C10", "surface-container-lowest": "#0d0e12", "muzzle-flare": "#E51A1A", "reticle-crimson": "#DC2626", "on-error": "#690005", "primary": "#ffb4ab", "on-secondary-container": "#ffe2dd", "background": "#121317", "on-error-container": "#ffdad6", "on-tertiary-fixed-variant": "#653e00", "secondary": "#ffb4aa", "surface-tint": "#ffb4ab", "primary-fixed": "#ffdad6", "tertiary": "#ffb95f", "surface-container": "#1f1f24", "on-primary-fixed": "#410002", "surface-bright": "#38393e", "on-surface": "#e3e2e8", "chalk-white": "#F8FAFC", "secondary-fixed": "#ffdad5", "surface-container-high": "#292a2e" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "space-md": "1rem", "gutter-mobile": "0.75rem", "space-2xl": "4rem", "space-xl": "2.5rem", "space-lg": "1.5rem", "margin": "2rem", "gutter": "1.25rem", "margin-mobile": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "metric-display": [ "Anton" ], "label-telemetry": [ "JetBrains Mono" ], "body-md": [ "Chivo" ], "body-sm": [ "Chivo" ], "display-hero": [ "Anton" ], "display-hero-mobile": [ "Anton" ], "body-lg": [ "Chivo" ], "headline-lg": [ "Anton" ], "headline-md": [ "Anton" ], "label-code": [ "JetBrains Mono" ], "headline-lg-mobile": [ "Anton" ], "headline-sm": [ "Chivo" ] }, "fontSize": { "metric-display": [ "64px", { "lineHeight": "64px", "letterSpacing": "0.01em", "fontWeight": "400" } ], "label-telemetry": [ "12px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "600" } ], "body-md": [ "15px", { "lineHeight": "22px", "fontWeight": "400" } ], "body-sm": [ "13px", { "lineHeight": "18px", "fontWeight": "400" } ], "display-hero": [ "96px", { "lineHeight": "96px", "letterSpacing": "0.04em", "fontWeight": "400" } ], "display-hero-mobile": [ "52px", { "lineHeight": "54px", "letterSpacing": "0.03em", "fontWeight": "400" } ], "body-lg": [ "18px", { "lineHeight": "28px", "fontWeight": "400" } ], "headline-lg": [ "48px", { "lineHeight": "52px", "letterSpacing": "0.03em", "fontWeight": "400" } ], "headline-md": [ "28px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "400" } ], "label-code": [ "10px", { "lineHeight": "14px", "letterSpacing": "0.12em", "fontWeight": "500" } ], "headline-lg-mobile": [ "32px", { "lineHeight": "36px", "letterSpacing": "0.02em", "fontWeight": "400" } ], "headline-sm": [ "20px", { "lineHeight": "26px", "letterSpacing": "0.01em", "fontWeight": "700" } ] } } } };</script></head><body class="bg-carbon-base font-body-md text-body-md text-on-surface antialiased selection:bg-reticle-crimson selection:text-chalk-white"><header class="fixed top-0 left-0 w-full z-50 bg-carbon-base/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full max-w-7xl mx-auto px-margin-mobile lg:px-margin flex items-center justify-between"><div class="flex items-center gap-space-lg"><a class="flex items-center gap-space-sm group" data-path="home" href="#"><span class="w-2 h-2 rounded-full bg-muzzle-flare animate-pulse"></span><div class="flex flex-col"><span class="font-headline-md text-headline-md text-chalk-white tracking-wider leading-none uppercase">LAKSHYA 2.0</span><span class="font-label-code text-label-code text-optic-subdued tracking-widest uppercase mt-0.5">NCC RVCE × GARE</span></div></a><nav class="hidden lg:flex items-center gap-space-xs pl-space-md" data-active-classes="text-chalk-white bg-carbon-surface font-semibold"><a aria-current="page" class="px-space-md py-space-sm uppercase tracking-wider transition-all text-chalk-white bg-carbon-surface font-semibold" data-path="home" href="#">Home</a><a class="px-space-md py-space-sm font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white hover:bg-carbon-surface transition-all" data-path="slot-allocation" href="#">Slot Allocation</a><a class="px-space-md py-space-sm font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white hover:bg-carbon-surface transition-all" data-path="cadet-pass" href="#">Cadet Pass</a><a class="px-space-md py-space-sm font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white hover:bg-carbon-surface transition-all" data-path="leaderboard" href="#">Leaderboard</a><a class="px-space-md py-space-sm font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white hover:bg-carbon-surface transition-all" data-path="admin-panel" href="#">Admin Panel</a></nav></div><div class="flex items-center gap-space-md"><a class="px-space-md py-space-sm bg-reticle-crimson hover:bg-muzzle-flare text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-widest transition-all shadow-sm" data-path="registration" href="#">[ Register Now ]</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-carbon-base min-h-screen"><div class="flex flex-col w-full">
+<!-- HERO SECTION -->
+<section class="relative w-full overflow-hidden bg-carbon-base pb-space-2xl pt-space-xl">
+<!-- Concentric Sniper Reticle Vector Backdrop -->
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+<div class="relative w-[780px] h-[780px] -mt-10 opacity-20 transition-transform duration-1000">
+<!-- Rings -->
+<div class="absolute inset-0 rounded-full border border-optic-subdued"></div>
+<div class="absolute inset-[60px] rounded-full border border-reticle-crimson"></div>
+<div class="absolute inset-[130px] rounded-full border border-optic-subdued"></div>
+<div class="absolute inset-[210px] rounded-full border border-optic-subdued/70"></div>
+<div class="absolute inset-[290px] rounded-full border border-reticle-crimson/80"></div>
+<div class="absolute inset-[350px] rounded-full border border-chalk-white/40"></div>
+<div class="absolute inset-[375px] rounded-full bg-muzzle-flare/30"></div>
+<!-- Crosshair Axes -->
+<div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] bg-reticle-crimson/50"></div>
+<div class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[1px] bg-reticle-crimson/50"></div>
+<!-- Reticle Tic Marks -->
+<div class="absolute top-1/2 left-8 -translate-y-1/2 w-4 h-[2px] bg-optic-subdued"></div>
+<div class="absolute top-1/2 right-8 -translate-y-1/2 w-4 h-[2px] bg-optic-subdued"></div>
+<div class="absolute left-1/2 top-8 -translate-x-1/2 h-4 w-[2px] bg-optic-subdued"></div>
+<div class="absolute left-1/2 bottom-8 -translate-x-1/2 h-4 w-[2px] bg-optic-subdued"></div>
+</div>
+<!-- Subtle Radial Vignette -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,#0B0C10_80%)]"></div>
+</div>
+<!-- Main Hero Container -->
+<div class="relative max-w-7xl mx-auto px-margin-mobile lg:px-margin flex flex-col items-center text-center z-10">
+<!-- Primary Title -->
+<div class="flex items-baseline justify-center gap-3 select-none mb-space-xs">
+<h1 class="font-display-hero text-display-hero text-chalk-white tracking-wider leading-none">
+          LAKSHYA
+        </h1>
+<span class="font-display-hero text-display-hero text-muzzle-flare tracking-wider leading-none">
+          2.0
+        </span>
+</div>
+<!-- Clean Subtitle -->
+<p class="font-headline-sm text-headline-sm text-chalk-white/90 tracking-wider uppercase max-w-2xl mb-space-lg">
+        10M Rifle and Pistol Shooting Experience
+      </p>
+<!-- Key Event Parameter Pills (Strictly Poster Aligned) -->
+<div class="flex flex-wrap items-center justify-center gap-2 max-w-4xl mb-space-xl">
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-reticle-crimson"></span>
+          15 SHOTS
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-target-amber"></span>
+          PLANT A SAPLING
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-optic-subdued"></span>
+          26TH &amp; 27TH SEPT
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-optic-subdued"></span>
+          RVCE CAMPUS
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-muzzle-flare"></span>
+          TOP 8 TO FINALS
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-target-amber"></span>
+          ₹350 ENTRY FEE
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-carbon-surface text-chalk-white font-label-telemetry text-label-telemetry rounded-none shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-muzzle-flare"></span>
+          10 ACTIVITY POINTS
+        </span>
+</div>
+<!-- 3 Direct Navigation Action Triggers -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md w-full max-w-3xl">
+<a class="group relative flex items-center justify-center px-space-lg py-space-md bg-reticle-crimson hover:bg-muzzle-flare text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-widest transition-all shadow-md" data-path="slot-allocation" href="#">
+<span class="relative z-10 font-bold">[ SELECT FIRING SLOT ]</span>
+</a>
+<a class="group relative flex items-center justify-center px-space-lg py-space-md bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-widest transition-all shadow-sm" data-path="cadet-pass" href="#">
+<span class="relative z-10 text-on-surface hover:text-chalk-white">[ RETRIEVE DIGITAL PASS ]</span>
+</a>
+<a class="group relative flex items-center justify-center px-space-lg py-space-md bg-surface-container-high/60 hover:bg-surface-container-high text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-widest backdrop-blur-sm transition-all shadow-sm" data-path="leaderboard" href="#">
+<span class="relative z-10 text-on-surface hover:text-chalk-white">[ VIEW LEADERBOARD ]</span>
+</a>
+</div>
+</div>
+</section>
+<!-- SPONSOR WEAPONS SHOWCASE SECTION -->
+<section class="w-full bg-carbon-surface py-space-2xl">
+<div class="max-w-7xl mx-auto px-margin-mobile lg:px-margin">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-space-xl gap-space-sm">
+<div>
+<span class="font-label-code text-label-code text-muzzle-flare uppercase tracking-widest">
+            OFFICIAL MATCH ARMORY &amp; EQUIPMENT
+          </span>
+<h2 class="font-headline-lg text-headline-lg text-chalk-white uppercase mt-0.5">
+            Sponsor Weapons Showcase
+          </h2>
+</div>
+<div class="text-right">
+<p class="font-label-telemetry text-label-telemetry text-optic-subdued uppercase tracking-wider">
+            Powered by Gandiva &amp; Precihole PCP Technologies
+          </p>
+</div>
+</div>
+<!-- Weapons Card Grid (6 Precision Weapons) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
+<!-- Weapon 1: Gandiva Match Pro X1 -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-reticle-crimson/15 text-reticle-crimson font-label-code text-label-code font-bold">
+                OLYMPIC PCP
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                PRECISION AIR
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Studio profile photograph of a matte black and precision anodized aluminum Gandiva Match Pro X1 Olympic 10-meter PCP air rifle. Features fully adjustable cheek rest, match grade barrel weight, and carbon air cylinder against a clean dark charcoal studio backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7YfMWFIBEEi_mjbxFAttfDm8j8x6FKwhMPoNQI_W5uEwcoYD3RGBhjZJ9yw9SvKOMAdjhJo61nPK8aWA9X5a-c1X0sRYp9RyojZ8FAFwVEuMGKVVHoU458tSIRshuqfuPnCUSPo_WxrsTOacaWpkY3KNYejtGSz8wSX_GWdKECsnIbAsCfE-oKK10BRXzO10hqpu-ZuGqqRBN2KEQ6jBrGstkdQ1TYYXxMtwjB7ed-MXs9BN8GEK7"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              Gandiva Match Pro X1
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              Olympic-tier match air rifle engineered for sub-millimeter shot dispersion on electronic targets.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">175 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">4.60 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('gandiva-x1')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+<!-- Weapon 2: Achilles X3 Match PCP -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-carbon-surface text-optic-subdued font-label-code text-label-code font-bold">
+                10M MATCH RIFLE
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                GARE SERIES
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Studio macro display photograph of Achilles X3 Match PCP rifle with refined aluminum chassis, micrometer rear diopter sight, and ergonomic laminated walnut grip on a dark tactical pedestal." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzFg3tQRHB7cudLZizC8trgWsot1b20hBrqKhBB1lQci07Qvxee2yixHvBSVBb15Lv6yJeSwhZHDbz3S6wWiZckd6GeszAN6oLYwvS0RLhtg26WF_GL2JCLzyK_sYB12rlqazOWLPZEMC1gY1oyEwuPhXU7GijVAcsyVpvwN13RBa1rKQwhrv_y9QAH_FpWtCoxmMikjsSxQn3nIS9EzeYUlRJmr7QAPH77AVkMgLrybjEg8E3H4Kj"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              Achilles X3 Match PCP
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              High-stability chassis designed for national cadences, offering balanced center of gravity and dual air regulators.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">170 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">4.45 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('achilles-x3')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+<!-- Weapon 3: PX120 Minotaur Tactical -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-reticle-crimson/15 text-reticle-crimson font-label-code text-label-code font-bold">
+                BULLPUP PLATFORM
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                TACTICAL SPORT
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Compact tactical Precihole PX120 Minotaur bullpup PCP rifle studio rendering, aggressive matte polymer stock, integrated Picatinny rails, tactical suppressor shroud on dark carbon background with subtle red rim lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWtehKwhFga6uil6TEh6FH3hrpGlV1tdzZSLliAZMFtx93v9zlpydgE_AycK8i971gr6_pswnGCPCAGaSr-jLB90DIXTdAG1HjDT4Bc9uAQmxK9unGrC4hEo153CpTj9nQHbcChcvdND-vQDZz4r3YsKxv9rG7KQMP5KQViyd8smnG520GO0AoFjzmH24T1XA_n4QkHhUgBFWTcosk7Oab-T2C27k8vDa5eWHAunsj_WK46qSN6vr9"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              PX120 Minotaur Tactical
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              Compact bullpup architecture providing superior maneuverability and high shot capacity per 200 BAR charge.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">255 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">3.10 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('px120-minotaur')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+<!-- Weapon 4: PP75 Champion 10m -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-carbon-surface text-optic-subdued font-label-code text-label-code font-bold">
+                MATCH AIR PISTOL
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                10M DISCIPLINE
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Side profile photography of PP75 Champion 10m match air pistol with anatomical carved wooden palm shelf, counterweight balance rods, and red pneumatic reservoir tube in a sharp high-contrast lighting studio setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2YxHqBWwye5JH3F1CUO5idebOBAd7Dm_SfN9nVR_CYm61oZftUd2XENOOHZKI-r7nrJehJ4sejJhBKW80wdb-4o4OoEFRgn4_-Fs2FCvFVTBOZOOw3YWm9af_FOAiECRRTtbhIRbYbXqDbhLSJrg8rJ5V7w8QLgQUkDi0BFhkqWWJYwwHJ-MgmxNbj8a2jPLJOMa_PHvnCNbI7B-YLxe3HfnGMeXn5ntimNCZv_dg5WAd_DqXYDMW"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              PP75 Champion 10m
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              Competition single-shot PCP match pistol with anatomical carved wood grip and adjustable two-stage match trigger.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">160 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">0.98 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('pp75-champion')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+<!-- Weapon 5: Benchrest Special Extreme -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-reticle-crimson/15 text-reticle-crimson font-label-code text-label-code font-bold">
+                HEAVY MATCH
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                BENCHREST SPEC
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Benchrest Special Extreme PCP air rifle studio product photograph on dark slate surface. Features extra-wide flat forend, stainless match barrel, side-lever cocking mechanism and matte carbon cylinder." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgO0ynpqlBonf0HHTJ_gcxKN8h4fMOmRPCq0T5fbPGp9Vy1rwYYMU389uEXYzrEYOB0DUURooxyXbBbUrl3rogW92BF40cgcaIgOljFnqptzPJ3HcwLgTjyPpAWeknULo0B1Uw6de9TqCFONeMFDdiEbkt80GYYXozhEcb7lDW6ienhVslFhfGjU0AUmmJ0BMxAti-fXl7zRgsQSFK1Nh0JgjH10nXDty-T0T67p74Pc6eEcoe5Dfd"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              Benchrest Special Extreme
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              Heavy contour flat-forend chassis dedicated to absolute zero harmonic recoil and pinpoint mechanical consistency.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">180 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">5.20 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('benchrest-extreme')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+<!-- Weapon 6: PP55 Match Pro Junior -->
+<div class="bg-carbon-base rounded-none p-space-md flex flex-col justify-between shadow-sm transition-transform duration-200 hover:-translate-y-1">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="px-2 py-0.5 bg-carbon-surface text-optic-subdued font-label-code text-label-code font-bold">
+                CADET MATCH PISTOL
+              </span>
+<span class="font-label-code text-label-code text-optic-subdued">
+                DEVELOPMENT
+              </span>
+</div>
+<div class="relative w-full h-48 bg-carbon-surface mb-space-md overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="PP55 Match Pro Junior PCP air pistol for cadet athletes photographed against dark tactical steel panels. Slim grip, compact barrel length, crimson accent rings, and clean front post sight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXfcHTnPlL-zU2nQrBVz8IpOtwlNKSB8uLB2OlzZ7EG315-Xml8U7Zz_UzoyUWozXemR1ZLc9Dz3YmQ_scsVyz8RoAXIUs1iiwGcJ2yq67c-PYkSpjFo5w23s1fbcvxV3maUBdhlM5rZZ3L0-farO_NMsx7Uo_0_UUjyWFewXcOoTvT4sTzdSzqqsBEv7Wd3s4mt5R0ONSC-h6x-9sIbjWNRURYi7P_sjUx4_Odj5as2hyec_7tu8U"/>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-chalk-white uppercase leading-snug">
+              PP55 Match Pro Junior
+            </h3>
+<p class="font-body-sm text-body-sm text-optic-subdued mb-space-md">
+              Streamlined match pistol tailored for cadet training, providing light trigger pull and rapid air cylinder recharge.
+            </p>
+<div class="grid grid-cols-3 gap-space-xs bg-carbon-surface p-space-sm mb-space-md">
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">CALIBER</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">.177 (4.5mm)</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">VELOCITY</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">155 m/s</span>
+</div>
+<div>
+<span class="block font-label-code text-label-code text-optic-subdued">WEIGHT</span>
+<span class="font-label-telemetry text-label-telemetry text-chalk-white">0.86 kg</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-carbon-surface hover:bg-carbon-elevated text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-wider flex items-center justify-center gap-1 transition-colors" onclick="toggleSpecs('pp55-junior')">
+<span>View Specs</span>
+<span class="material-symbols-outlined text-sm text-reticle-crimson">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- QUICK TECHNICAL SPECS MODAL -->
+<div class="fixed inset-0 z-50 bg-carbon-base/80 backdrop-blur-md flex items-center justify-center p-4 hidden" id="specs-modal">
+<div class="bg-carbon-surface max-w-lg w-full p-space-lg shadow-xl relative">
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<h4 class="font-headline-sm text-headline-sm text-chalk-white uppercase tracking-wider" id="modal-title">
+          Weapon Specifications
+        </h4>
+<button class="w-8 h-8 flex items-center justify-center text-optic-subdued hover:text-chalk-white bg-carbon-base" onclick="closeSpecs()">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="font-body-md text-body-md text-chalk-white/80 space-y-3" id="modal-content">
+<!-- Injected via Script -->
+</div>
+<div class="mt-space-lg pt-space-sm flex justify-end">
+<button class="px-space-md py-1.5 bg-carbon-base text-chalk-white font-label-telemetry text-label-telemetry uppercase tracking-widest hover:bg-reticle-crimson transition-colors" onclick="closeSpecs()">
+          [ Close Data ]
+        </button>
+</div>
+</div>
+</div>
+<script>
+    const weaponsData = {
+      'gandiva-x1': {
+        title: 'Gandiva Match Pro X1',
+        category: 'Olympic PCP Air Rifle',
+        cylinder: 'Titanium 250 BAR Pre-charged Pneumatic',
+        trigger: 'Two-stage fully adjustable (30g - 120g)',
+        barrel: 'Match-grade rifled precision steel 425mm',
+        sight: 'Micro-adjustable diopter 20-click rotary turret'
+      },
+      'achilles-x3': {
+        title: 'Achilles X3 Match PCP',
+        category: '10M Match Rifle',
+        cylinder: 'Lightweight duralumin 200 BAR quick-fill',
+        trigger: 'Ball-bearing pivoted match blade',
+        barrel: 'Choked cold-hammered steel barrel',
+        sight: 'Rear iris shutter aperture with optic sunshade'
+      },
+      'px120-minotaur': {
+        title: 'PX120 Minotaur Tactical',
+        category: 'Bullpup Tactical Platform',
+        cylinder: 'Integrated 300cc carbon fiber reservoir',
+        trigger: 'Direct linkage combat tactile reset',
+        barrel: 'Shrouded quiet-bore carbine barrel',
+        sight: 'Full-length MIL-STD 1913 Picatinny system'
+      },
+      'pp75-champion': {
+        title: 'PP75 Champion 10m',
+        category: 'Match Air Pistol',
+        cylinder: 'Front-mount removable pressure tube with gauge',
+        trigger: '500g regulation ISSF match trigger',
+        barrel: 'Ported compensator barrel housing',
+        sight: 'Micrometer rear sight with adjustable notch width'
+      },
+      'benchrest-extreme': {
+        title: 'Benchrest Special Extreme',
+        category: 'Heavy Match Platform',
+        cylinder: 'Dual chamber regulated 230 BAR capacity',
+        trigger: 'Ultra-crisp 50g electronic trigger assist',
+        barrel: 'Floating heavy barrel with harmonic tuner',
+        sight: 'Dovetail rail optimized for high-power target optics'
+      },
+      'pp55-junior': {
+        title: 'PP55 Match Pro Junior',
+        category: 'Cadet Match Pistol',
+        cylinder: 'Compact 150 BAR quick-charge cylinder',
+        trigger: 'Modular match trigger unit',
+        barrel: 'Lightweight aluminum alloy barrel jacket',
+        sight: 'Standard fixed front blade with adjustable rear square'
+      }
+    };
+
+    function toggleSpecs(id) {
+      const modal = document.getElementById('specs-modal');
+      const title = document.getElementById('modal-title');
+      const content = document.getElementById('modal-content');
+      const data = weaponsData[id];
+
+      if (data) {
+        title.innerText = data.title;
+        content.innerHTML = `
+          <div class="flex justify-between py-1 bg-carbon-base px-2">
+            <span class="font-label-code text-label-code text-optic-subdued">TYPE</span>
+            <span class="font-label-telemetry text-label-telemetry text-chalk-white">${data.category}</span>
+          </div>
+          <div class="flex justify-between py-1 bg-carbon-base px-2">
+            <span class="font-label-code text-label-code text-optic-subdued">AIR SYSTEM</span>
+            <span class="font-label-telemetry text-label-telemetry text-chalk-white">${data.cylinder}</span>
+          </div>
+          <div class="flex justify-between py-1 bg-carbon-base px-2">
+            <span class="font-label-code text-label-code text-optic-subdued">TRIGGER UNIT</span>
+            <span class="font-label-telemetry text-label-telemetry text-chalk-white">${data.trigger}</span>
+          </div>
+          <div class="flex justify-between py-1 bg-carbon-base px-2">
+            <span class="font-label-code text-label-code text-optic-subdued">BARREL CONFIG</span>
+            <span class="font-label-telemetry text-label-telemetry text-chalk-white">${data.barrel}</span>
+          </div>
+          <div class="flex justify-between py-1 bg-carbon-base px-2">
+            <span class="font-label-code text-label-code text-optic-subdued">SIGHTING SYSTEM</span>
+            <span class="font-label-telemetry text-label-telemetry text-chalk-white">${data.sight}</span>
+          </div>
+        `;
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeSpecs() {
+      document.getElementById('specs-modal').classList.add('hidden');
+    }
+  </script>
+</div></main><footer class="w-full bg-carbon-surface"><div class="max-w-7xl mx-auto px-margin-mobile lg:px-margin py-space-xl"><div class="flex flex-col md:flex-row items-center justify-between gap-space-lg"><div class="flex flex-col items-center md:items-start gap-space-xs"><span class="font-headline-sm text-headline-sm text-chalk-white tracking-wide uppercase">LAKSHYA 2.0</span><span class="font-label-telemetry text-label-telemetry text-optic-subdued">10M RIFLE &amp; PISTOL SHOOTING CHAMPIONSHIP · NCC RVCE × GARE</span></div><div class="flex flex-wrap items-center justify-center gap-space-lg"><a class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white transition-colors" data-path="slot-allocation" href="#">Range Schedule</a><a class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white transition-colors" data-path="leaderboard" href="#">Live Standings</a><a class="font-label-telemetry text-label-telemetry uppercase tracking-wider text-optic-subdued hover:text-chalk-white transition-colors" data-path="admin-panel" href="#">Officials Portal</a></div></div><div class="mt-space-lg pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-sm text-center md:text-left"><span class="font-label-code text-label-code text-optic-subdued">© 2025 LAKSHYA 2.0. GANDIVA AERO-PNEUMATIC RANGE &amp; NCC RVCE. ALL RIGHTS RESERVED.</span><div class="flex items-center gap-space-md"><span class="font-label-code text-label-code text-optic-subdued">PRECISION TARGET PROTOCOL</span><span class="w-1.5 h-1.5 rounded-full bg-reticle-crimson"></span><span class="font-label-code text-label-code text-optic-subdued">10M ELECTRONIC TARGETRY</span></div></div></div></footer></body></html>
