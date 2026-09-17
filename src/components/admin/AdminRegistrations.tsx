@@ -59,21 +59,31 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     return { rifleBooked: rifle, pistolBooked: pistol };
   }, [bookings]);
 
-  // Filtered registrations list
+  // Filtered registrations list with deduplication of any legacy alias records
   const filteredList = useMemo(() => {
+    const seenKeys = new Set<string>();
+
     return registrations.filter((reg) => {
+      // Deduplicate if doc is an alias or shares the same non-empty USN
       const email = reg.email.toLowerCase();
+      const usn = (reg.usn || '').toUpperCase().trim();
+      const dedupeKey = (usn && usn.length > 3) ? `usn_${usn}` : `em_${email}`;
+
+      if (seenKeys.has(dedupeKey)) {
+        return false;
+      }
+      seenKeys.add(dedupeKey);
+
       const name = reg.name.toLowerCase();
-      const usn = (reg.usn || '').toLowerCase();
       const branch = (reg.branch || '').toLowerCase();
       const q = searchQuery.toLowerCase().trim();
 
-      if (q && !email.includes(q) && !name.includes(q) && !usn.includes(q) && !branch.includes(q)) {
+      if (q && !email.includes(q) && !name.includes(q) && !usn.toLowerCase().includes(q) && !branch.includes(q)) {
         return false;
       }
 
-      const hasRifle = rifleBooked.has(email);
-      const hasPistol = pistolBooked.has(email);
+      const hasRifle = rifleBooked.has(email) || (reg.rvceEmail && rifleBooked.has(reg.rvceEmail.toLowerCase()));
+      const hasPistol = pistolBooked.has(email) || (reg.rvceEmail && pistolBooked.has(reg.rvceEmail.toLowerCase()));
 
       if (activeFilter === 'unbooked' && (hasRifle || hasPistol)) return false;
       if (activeFilter === 'rifle' && !hasRifle) return false;
@@ -124,15 +134,6 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
 
     try {
       await setDoc(regRef, regData, { merge: true });
-
-      // If distinct RVCE email was provided, write alias doc
-      if (cleanRvce && cleanRvce !== cleanEmail && cleanRvce.includes('@')) {
-        await setDoc(getDocRef('registrations', cleanRvce), {
-          ...regData,
-          id: cleanRvce,
-          email: cleanRvce,
-        }, { merge: true });
-      }
 
       setShowAddModal(false);
       setNewName('');
@@ -221,15 +222,6 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
         try {
           await setDoc(getDocRef('registrations', primaryEmail), record, { merge: true });
           count++;
-
-          // Also allowlist RVCE email if different so student can login with either account
-          if (rvceEmail && rvceEmail !== primaryEmail && rvceEmail.includes('@')) {
-            await setDoc(getDocRef('registrations', rvceEmail), {
-              ...record,
-              id: rvceEmail,
-              email: rvceEmail,
-            }, { merge: true });
-          }
         } catch (err) {
           console.error("Failed importing form row:", line, err);
           errors++;

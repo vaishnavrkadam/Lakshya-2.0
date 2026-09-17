@@ -153,11 +153,19 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         }
 
         // 3. Read participant registration
-        const regSnap = await transaction.get(regRef);
-        if (!regSnap.exists()) {
+        let regData = registration as any;
+        try {
+          const regSnap = await transaction.get(regRef);
+          if (regSnap.exists()) {
+            regData = regSnap.data();
+          }
+        } catch (_) {
+          // If direct get fails, fall back to session registration
+        }
+
+        if (!regData) {
           throw new Error("REGISTRATION_NOT_FOUND");
         }
-        const regData = regSnap.data();
         if (!regData.eligible) {
           throw new Error("REGISTRATION_NOT_ELIGIBLE");
         }
@@ -173,7 +181,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           qrToken,
           registrationId: emailKey,
           emailKey,
-          participantEmail: currentUser.email!,
+          participantEmail: emailKey,
           participantName: regData.name || currentUser.displayName || 'Competitor',
           participantGender: selectedGender,
           college: regData.college || 'RVCE',

@@ -144,7 +144,7 @@ function onFormSubmit(e) {
       return;
     }
 
-    // 1. Upload primary registration record
+    // 1. Upload single registration record with both personal and RVCE email fields
     uploadToFirestore(primaryEmail, {
       name: nameRaw.toString().trim(),
       email: primaryEmail,
@@ -158,23 +158,6 @@ function onFormSubmit(e) {
       source: "google_form_automated",
       eligible: true
     });
-
-    // 2. If student provided a distinct RVCE email, upload alias record so they can sign in with either!
-    if (rvceEmail && rvceEmail !== primaryEmail && rvceEmail.indexOf("@") !== -1) {
-      uploadToFirestore(rvceEmail, {
-        name: nameRaw.toString().trim(),
-        email: rvceEmail,
-        rvceEmail: rvceEmail,
-        usn: usnRaw,
-        branch: branchRaw,
-        yearOfStudy: yearRaw,
-        phone: phoneRaw.toString(),
-        dob: dobRaw.toString(),
-        college: "RVCE",
-        source: "google_form_alias",
-        eligible: true
-      });
-    }
 
     Logger.log("Successfully synced participant: " + primaryEmail);
   } catch (error) {
