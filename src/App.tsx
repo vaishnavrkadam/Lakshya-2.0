@@ -65,6 +65,12 @@ function MainApp() {
     };
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      setView('admin');
+    }
+  }, [isAdmin]);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0B0C10] text-[#F8FAFC]">
       {/* Navigation Header */}
@@ -72,14 +78,8 @@ function MainApp() {
 
       {/* Main View Router */}
       <main className="flex-1 w-full">
-        {currentView === 'overview' && <Overview setView={setView} />}
-        {currentView === 'slot-booking' && <SlotBooking setView={setView} />}
-        {currentView === 'digital-pass' && <DigitalPass setView={setView} />}
-        {currentView === 'live-leaderboard' && <LiveLeaderboard />}
-        {currentView === 'profile' && <Profile setView={setView} />}
-
-        {/* Admin Suite */}
-        {currentView === 'admin' && (
+        {isAdmin ? (
+          /* When Admin is logged in, take directly to Admin Suite with no other page */
           <AdminLayout currentTab={adminTab} setTab={setAdminTab}>
             {adminTab === 'dashboard' && (
               <AdminDashboard registrations={registrations} slots={slots} bookings={bookings} />
@@ -106,6 +106,15 @@ function MainApp() {
               <AdminAudit />
             )}
           </AdminLayout>
+        ) : (
+          /* Public Competitor View Router */
+          <>
+            {currentView === 'overview' && <Overview setView={setView} />}
+            {currentView === 'slot-booking' && <SlotBooking setView={setView} />}
+            {currentView === 'digital-pass' && <DigitalPass setView={setView} />}
+            {currentView === 'live-leaderboard' && <LiveLeaderboard />}
+            {currentView === 'profile' && <Profile setView={setView} />}
+          </>
         )}
       </main>
 

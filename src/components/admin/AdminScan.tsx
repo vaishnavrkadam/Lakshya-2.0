@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, type CameraDevice } from 'html5-qrcode';
 import { parseQrPayload } from '../../lib/bookingPayload';
 import { getDocRef, runTransaction, serverTimestamp } from '../../lib/firebase';
 import type { Booking, LakshyaQrPayload } from '../../types/lakshya';
@@ -14,7 +14,9 @@ import {
   UserCheck, 
   Ticket, 
   Search, 
-  RefreshCw 
+  RefreshCw,
+  UploadCloud,
+  FileText
 } from 'lucide-react';
 
 interface AdminScanProps {
@@ -24,6 +26,9 @@ interface AdminScanProps {
 export default function AdminScan({ bookings }: AdminScanProps) {
   const { currentUser } = useAuth();
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [scannerStatus, setScannerStatus] = useState<string>('IDLE');
   const [manualCode, setManualCode] = useState<string>('');
   const [scannedResult, setScannedResult] = useState<{
     booking?: Booking;
@@ -35,15 +40,25 @@ export default function AdminScan({ bookings }: AdminScanProps) {
   const [checkInSuccess, setCheckInSuccess] = useState<string | null>(null);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Initialize camera scanner
+  // Discover available cameras on mount
   useEffect(() => {
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        if (devices && devices.length > 0) {
+          setCameras(devices);
+          // Prefer back camera if available, otherwise first camera
+          const backCam = devices.find((d) => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
+          setSelectedCameraId(backCam ? backCam.id : devices[0].id);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not enumerate cameras upfront:", err);
+      });
+
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {}).finally(() => {
-          scannerRef.current?.clear();
-        });
-      }
+      stopScanner();
     };
   }, []);
 
@@ -51,28 +66,53 @@ export default function AdminScan({ bookings }: AdminScanProps) {
     try {
       setScannedResult(null);
       setCheckInSuccess(null);
-      const scanner = new Html5Qrcode('qr-reader-container');
-      scannerRef.current = scanner;
+      setScannerStatus('INITIALIZING CAMERA...');
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          handleScannedText(decodedText);
-          stopScanner();
-        },
-        (errorMessage) => {
-          // ignore scan frame errors
+      // Clean up previous instance if any
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+        } catch (_) {}
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+
+      const html5QrCode = new Html5Qrcode('qr-reader-target');
+      scannerRef.current = html5QrCode;
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+      };
+
+      const onSuccess = (decodedText: string) => {
+        handleScannedText(decodedText);
+        stopScanner();
+      };
+
+      const onError = (_errorMessage: string) => {
+        // frame decode ignore
+      };
+
+      // Try camera by deviceId first if chosen, otherwise fallback to generic facingMode
+      if (selectedCameraId) {
+        await html5QrCode.start(selectedCameraId, config, onSuccess, onError);
+      } else {
+        try {
+          await html5QrCode.start({ facingMode: 'environment' }, config, onSuccess, onError);
+        } catch (envErr) {
+          console.warn("Environment camera failed, falling back to user facing camera...", envErr);
+          await html5QrCode.start({ facingMode: 'user' }, config, onSuccess, onError);
         }
-      );
+      }
 
       setIsScanning(true);
-    } catch (err) {
+      setScannerStatus('LIVE SCANNING ACTIVE');
+    } catch (err: any) {
       console.error("Camera start failed:", err);
-      alert("Unable to access camera for scanning. Please check camera permissions.");
+      setScannerStatus('CAMERA INITIALIZATION ERROR');
+      alert(`Camera Access Error: ${err.message || 'Please verify browser camera permissions and refresh.'}`);
       setIsScanning(false);
     }
   };
@@ -80,12 +120,37 @@ export default function AdminScan({ bookings }: AdminScanProps) {
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
         scannerRef.current.clear();
       } catch (err) {
         // already stopped
       }
-      setIsScanning(false);
+      scannerRef.current = null;
+    }
+    setIsScanning(false);
+    setScannerStatus('IDLE');
+  };
+
+  // Image file upload QR scanner fallback
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setScannerStatus('PROCESSING PASS IMAGE...');
+      const tempScanner = new Html5Qrcode('qr-file-dummy');
+      const decodedText = await tempScanner.scanFile(file, true);
+      tempScanner.clear();
+      handleScannedText(decodedText);
+      setScannerStatus('IDLE');
+    } catch (err: any) {
+      console.error("File QR scan failed:", err);
+      setScannedResult({
+        error: "Could not detect a valid QR code in the uploaded image file. Please upload a clear photo or screenshot.",
+      });
+      setScannerStatus('IDLE');
     }
   };
 
@@ -173,30 +238,26 @@ export default function AdminScan({ bookings }: AdminScanProps) {
     }
   };
 
-  // Manual ticket ID lookup fallback
+  // Manual search by Ticket ID / Email / Name
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualCode.trim()) return;
 
     const queryCode = manualCode.trim().toUpperCase();
     const found = bookings.find(
-      (b) => b.ticketId?.toUpperCase() === queryCode || b.participantEmail?.toLowerCase() === queryCode.toLowerCase()
+      (b) => b.ticketId?.toUpperCase() === queryCode || 
+             b.participantEmail?.toLowerCase() === queryCode.toLowerCase() ||
+             b.participantName?.toLowerCase().includes(queryCode.toLowerCase())
     );
 
     if (found) {
-      if (found.checkedIn) {
-        setScannedResult({
-          booking: found,
-          isDuplicate: true,
-        });
-      } else {
-        setScannedResult({
-          booking: found,
-        });
-      }
+      setScannedResult({
+        booking: found,
+        isDuplicate: found.checkedIn,
+      });
     } else {
       setScannedResult({
-        error: `No booking found for ticket/email identifier "${queryCode}".`,
+        error: `No booking record found matching "${queryCode}". Check spelling or verify allowlist.`,
       });
     }
   };
@@ -256,43 +317,88 @@ export default function AdminScan({ bookings }: AdminScanProps) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div className="bg-[#FAF7F2] border border-[#CFC6B6] rounded-xl p-6 shadow-sm space-y-6">
-        <div className="border-b border-[#E8E0D2] pb-4 flex items-center justify-between">
+      <div className="bg-[#12131A] border border-[#282B3A] p-6 shadow-sm space-y-6">
+        <div className="border-b border-[#282B3A] pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
-            <span className="text-xs font-mono uppercase tracking-widest text-[#6F6A61] block">
-              Range Reception & Gate Control
+            <span className="font-mono text-xs uppercase tracking-widest text-[#DC2626] block">
+              RANGE RECEPTION & GATE CONTROL
             </span>
-            <h2 className="text-2xl font-serif font-bold text-[#171717]">QR Pass Scanner & Attendance</h2>
+            <h2 className="font-headline-sm text-2xl font-serif text-[#F8FAFC] uppercase">
+              QR Pass Scanner & Attendance
+            </h2>
           </div>
-          <div className="text-xs font-mono text-[#315D4C] flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" /> Live Verification
+          <div className="font-mono text-xs text-emerald-400 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" /> Live Range Ledger
+          </div>
+        </div>
+
+        {/* Camera Selector and Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0B0C10] p-3 border border-[#282B3A]">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase text-[#64748B]">Active Sensor:</span>
+            {cameras.length > 0 ? (
+              <select
+                disabled={isScanning}
+                value={selectedCameraId}
+                onChange={(e) => setSelectedCameraId(e.target.value)}
+                className="bg-[#12131A] border border-[#282B3A] text-xs font-mono text-[#F8FAFC] px-2.5 py-1 rounded focus:outline-none"
+              >
+                {cameras.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label || `Camera ${c.id.substring(0, 5)}...`}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="font-mono text-xs text-[#64748B]">Auto-detecting...</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+              title="Upload QR code image"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-[#DC2626]" />
+              <span>Upload Pass Image</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
           </div>
         </div>
 
         {/* Camera Scanner Viewport */}
         <div className="space-y-4 text-center">
-          <div
-            id="qr-reader-container"
-            className="w-full max-w-sm mx-auto overflow-hidden rounded-lg bg-black border-2 border-[#171717] aspect-square flex items-center justify-center relative"
-          >
+          <div className="relative w-full max-w-sm mx-auto overflow-hidden bg-black border-2 border-[#282B3A] aspect-square flex items-center justify-center">
+            {/* Pure isolated target container for Html5Qrcode (NO React child elements inside this DOM node) */}
+            <div id="qr-reader-target" className="w-full h-full"></div>
+
+            {/* Overlay placeholder displayed only when NOT scanning */}
             {!isScanning && (
-              <div className="p-6 text-[#F3EEE3] space-y-3">
-                <Camera className="w-12 h-12 mx-auto text-[#E79A19]" />
-                <p className="text-xs font-mono">Camera scanner idle</p>
+              <div className="absolute inset-0 bg-[#0B0C10] flex flex-col items-center justify-center p-6 text-center space-y-3 pointer-events-auto">
+                <Camera className="w-12 h-12 mx-auto text-[#DC2626] opacity-80" />
+                <p className="font-mono text-xs text-[#64748B]">{scannerStatus}</p>
                 <button
                   onClick={startScanner}
-                  className="px-4 py-2 bg-[#E79A19] text-[#171717] font-semibold text-xs rounded hover:bg-[#D48911]"
+                  className="px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-all"
                 >
-                  Start Camera Scan
+                  [ Start Camera Scan ]
                 </button>
               </div>
             )}
           </div>
 
+          {/* Stop scanner button */}
           {isScanning && (
             <button
               onClick={stopScanner}
-              className="px-4 py-2 bg-[#9B2C2C] text-white text-xs font-medium rounded flex items-center gap-1.5 mx-auto"
+              className="px-4 py-2 bg-red-950 border border-red-800 text-red-300 hover:text-white font-mono text-xs uppercase tracking-wider flex items-center gap-1.5 mx-auto transition-colors"
             >
               <CameraOff className="w-4 h-4" />
               <span>Stop Scanner</span>
@@ -300,19 +406,22 @@ export default function AdminScan({ bookings }: AdminScanProps) {
           )}
         </div>
 
-        {/* Fallback Manual Entry */}
-        <div className="border-t border-[#E8E0D2] pt-4">
+        {/* Fallback Manual Search by Ticket ID / Email */}
+        <div className="border-t border-[#282B3A] pt-5">
+          <span className="font-mono text-[10px] uppercase text-[#64748B] block mb-2">
+            Instant Manual Lookup (Ticket ID / Email / Competitor Name)
+          </span>
           <form onSubmit={handleManualSearch} className="flex gap-2">
             <input
               type="text"
-              placeholder="Or enter Ticket ID (e.g. TKT-7F2A9C) or participant email..."
+              placeholder="e.g. TKT-B4E9 or 1RV22CS001 or rahul@rvce.edu.in..."
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
-              className="flex-1 p-2.5 bg-white border border-[#CFC6B6] rounded-lg text-xs font-mono text-[#171717] focus:outline-none focus:border-[#171717]"
+              className="flex-1 p-2.5 bg-[#0B0C10] border border-[#282B3A] font-mono text-xs text-[#F8FAFC] focus:outline-none focus:border-[#DC2626]"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 bg-[#171717] text-[#F3EEE3] hover:bg-[#333333] text-xs font-medium rounded-lg shrink-0 flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider font-bold shrink-0 flex items-center gap-1.5 transition-colors"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Lookup</span>
@@ -322,75 +431,85 @@ export default function AdminScan({ bookings }: AdminScanProps) {
 
         {/* Success Alert */}
         {checkInSuccess && (
-          <div className="p-4 rounded-lg bg-[#315D4C]/15 border border-[#315D4C] text-[#315D4C] text-xs font-mono flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span className="font-semibold text-sm">{checkInSuccess}</span>
+          <div className="p-4 bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-mono text-xs flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+            <span className="font-bold text-sm">{checkInSuccess}</span>
           </div>
         )}
 
         {/* Scan Result Cards */}
         {scannedResult && (
-          <div className="animate-fade-in border-t border-[#E8E0D2] pt-4">
+          <div className="animate-fade-in border-t border-[#282B3A] pt-4">
             {scannedResult.error ? (
-              <div className="p-5 rounded-lg bg-red-50 border border-red-200 text-[#9B2C2C] space-y-2">
-                <div className="flex items-center gap-2 font-bold font-serif text-lg">
+              <div className="p-5 bg-red-950/40 border border-red-800 text-red-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold font-mono text-base text-red-400">
                   <XCircle className="w-5 h-5" />
-                  <span>INVALID PASS</span>
+                  <span>INVALID OR UNVERIFIED PASS</span>
                 </div>
-                <p className="text-xs font-mono">{scannedResult.error}</p>
+                <p className="font-mono text-xs">{scannedResult.error}</p>
               </div>
             ) : scannedResult.isDuplicate ? (
-              <div className="p-5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 space-y-3">
-                <div className="flex items-center gap-2 font-bold font-serif text-lg text-amber-800">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  <span>ALREADY ATTENDED (DUPLICATE SCAN)</span>
+              <div className="p-5 bg-amber-950/40 border border-amber-800 text-amber-200 space-y-3">
+                <div className="flex items-center gap-2 font-bold font-mono text-base text-amber-400">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>PASS ALREADY CHECKED IN (DUPLICATE)</span>
                 </div>
-                <div className="text-xs font-mono space-y-1">
-                  <p><strong>Shooter:</strong> {scannedResult.booking?.participantName}</p>
-                  <p><strong>Ticket ID:</strong> {scannedResult.booking?.ticketId}</p>
-                  <p><strong>Vertical:</strong> {scannedResult.booking?.vertical}</p>
-                  <p><strong>Checked-in By:</strong> {scannedResult.booking?.checkedInBy || 'Officer'}</p>
-                </div>
+                <p className="font-mono text-xs">
+                  This digital pass was already validated for range entry.
+                </p>
+                {scannedResult.booking && (
+                  <div className="bg-[#0B0C10] p-3 border border-[#282B3A] font-mono text-xs space-y-1">
+                    <div>Competitor: <strong className="text-[#F8FAFC]">{scannedResult.booking.participantName}</strong></div>
+                    <div>Vertical: <span className="text-[#DC2626] font-bold">{scannedResult.booking.vertical}</span></div>
+                    <div>Checked in at: <span className="text-[#64748B]">{scannedResult.booking.checkedInAt ? new Date(scannedResult.booking.checkedInAt.seconds * 1000).toLocaleString() : 'Previously'}</span></div>
+                  </div>
+                )}
               </div>
             ) : scannedResult.booking ? (
-              <div className="p-6 rounded-lg bg-white border-2 border-[#315D4C] space-y-4 shadow-md">
-                <div className="flex items-center justify-between border-b border-[#E8E0D2] pb-3">
-                  <div className="flex items-center gap-2 text-[#315D4C] font-serif font-bold text-lg">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Pass Verified Valid</span>
+              <div className="p-5 bg-emerald-950/30 border border-emerald-600/70 text-emerald-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold font-mono text-base text-emerald-400">
+                    <UserCheck className="w-5 h-5" />
+                    <span>AUTHENTICATED PASS IDENTIFIED</span>
                   </div>
-                  <span className="text-xs font-mono bg-[#E8E0D2] px-2 py-0.5 rounded text-[#171717] font-semibold">
+                  <span className="font-mono text-xs bg-[#DC2626] text-white px-2.5 py-0.5 font-bold uppercase">
                     {scannedResult.booking.vertical}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0B0C10] p-3 border border-[#282B3A] font-mono text-xs">
                   <div>
-                    <span className="text-[#6F6A61] block">Shooter Name:</span>
-                    <strong className="text-[#171717] text-sm">{scannedResult.booking.participantName}</strong>
+                    <span className="text-[10px] text-[#64748B] uppercase block">Competitor</span>
+                    <strong className="text-[#F8FAFC] text-sm">{scannedResult.booking.participantName}</strong>
                   </div>
                   <div>
-                    <span className="text-[#6F6A61] block">Ticket ID:</span>
-                    <strong className="text-[#171717] text-sm">{scannedResult.booking.ticketId}</strong>
+                    <span className="text-[10px] text-[#64748B] uppercase block">Ticket ID</span>
+                    <strong className="text-[#F8FAFC]">{scannedResult.booking.ticketId}</strong>
                   </div>
                   <div>
-                    <span className="text-[#6F6A61] block">Slot Time:</span>
-                    <span className="text-[#171717]">{scannedResult.booking.slotTimeLabel}</span>
+                    <span className="text-[10px] text-[#64748B] uppercase block">Date & Relay</span>
+                    <span className="text-[#F8FAFC]">{scannedResult.booking.slotDateLabel} ({scannedResult.booking.slotTimeLabel})</span>
                   </div>
                   <div>
-                    <span className="text-[#6F6A61] block">Slot Date:</span>
-                    <span className="text-[#171717]">{scannedResult.booking.slotDateLabel}</span>
+                    <span className="text-[10px] text-[#64748B] uppercase block">Division</span>
+                    <span className="text-[#DC2626] font-bold">{scannedResult.booking.participantGender || scannedResult.booking.gender || 'Standard'}</span>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#E8E0D2]">
+                <div className="flex justify-end gap-3 pt-2">
                   <button
-                    onClick={handleConfirmAttendance}
-                    disabled={processingCheckIn}
-                    className="w-full py-3 bg-[#315D4C] hover:bg-[#26483b] text-white font-bold text-xs rounded-lg shadow flex items-center justify-center gap-2 transition-colors"
+                    onClick={() => setScannedResult(null)}
+                    className="px-4 py-2 border border-[#282B3A] hover:bg-[#1A1C26] font-mono text-xs text-[#64748B] uppercase tracking-wider"
                   >
-                    <UserCheck className="w-4 h-4" />
-                    <span>{processingCheckIn ? 'Recording in Ledger...' : 'MARK ATTENDED / ADMIT SHOOTER'}</span>
+                    Dismiss
+                  </button>
+                  <button
+                    disabled={processingCheckIn}
+                    onClick={handleConfirmAttendance}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs uppercase tracking-widest font-bold shadow-lg flex items-center gap-2 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{processingCheckIn ? 'VERIFYING...' : '[ ADMIT SHOOTER TO RANGE ]'}</span>
                   </button>
                 </div>
               </div>
@@ -398,6 +517,9 @@ export default function AdminScan({ bookings }: AdminScanProps) {
           </div>
         )}
       </div>
+
+      {/* Hidden container for image file scanning */}
+      <div id="qr-file-dummy" className="hidden"></div>
     </div>
   );
 }

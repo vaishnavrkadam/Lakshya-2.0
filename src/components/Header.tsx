@@ -93,42 +93,53 @@ export default function Header({ currentView, setView }: HeaderProps) {
           </div>
 
           {/* Desktop Navigation Strip */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => {
-              const isActive = currentView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all rounded ${
-                    isActive
-                      ? 'bg-[#12131A] text-[#F8FAFC] border border-[#282B3A] font-semibold shadow-sm'
-                      : 'text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#12131A]/60'
-                  } ${item.adminOnly ? 'text-[#F59E0B] font-bold' : ''}`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+          {isAdmin ? (
+            <div className="hidden lg:flex items-center gap-2">
+              <span className="font-mono text-xs px-3 py-1 bg-red-950/40 border border-red-800 text-red-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-[#DC2626]" />
+                <span>OFFICER COMMAND TERMINAL ACTIVE</span>
+              </span>
+            </div>
+          ) : (
+            <nav className="hidden lg:flex items-center gap-1">
+              {navItems.map((item) => {
+                const isActive = currentView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all rounded ${
+                      isActive
+                        ? 'bg-[#12131A] text-[#F8FAFC] border border-[#282B3A] font-semibold shadow-sm'
+                        : 'text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#12131A]/60'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
 
           {/* Action Trigger & User Profile */}
           <div className="flex items-center gap-3">
-            {/* Quick Register Trigger */}
-            <button
-              onClick={() => {
-                if (!currentUser) {
-                  loginWithGoogle();
-                } else if (!registration) {
-                  setOnboardingOpen(true);
-                } else {
-                  handleNavClick('slot-booking');
-                }
-              }}
-              className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest transition-all shadow-sm font-semibold"
-            >
-              [ Register Now ]
-            </button>
+            {/* Quick Register Trigger for Non-Admin */}
+            {!isAdmin && (
+              <button
+                onClick={() => {
+                  if (!currentUser) {
+                    loginWithGoogle();
+                  } else if (!registration) {
+                    setOnboardingOpen(true);
+                  } else {
+                    handleNavClick('slot-booking');
+                  }
+                }}
+                className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest transition-all shadow-sm font-semibold"
+              >
+                [ Register Now ]
+              </button>
+            )}
 
             {/* User State */}
             {currentUser ? (

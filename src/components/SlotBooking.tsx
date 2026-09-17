@@ -43,6 +43,15 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<Booking | null>(null);
+  const [selectedGender, setSelectedGender] = useState<'Male' | 'Female' | null>(
+    (registration?.gender === 'Male' || registration?.gender === 'Female') ? registration.gender : null
+  );
+
+  useEffect(() => {
+    if (registration?.gender === 'Male' || registration?.gender === 'Female') {
+      setSelectedGender(registration.gender as 'Male' | 'Female');
+    }
+  }, [registration]);
 
   // Check if current user already has a booking in selected vertical
   const existingVerticalBooking = userBookings.find(
@@ -103,6 +112,11 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
 
     if (!selectedSlotId) return;
 
+    if (!selectedGender) {
+      setBookingError("Please select your Gender Division (Male or Female) before confirming your slot.");
+      return;
+    }
+
     setIsSubmitting(true);
     setBookingError(null);
 
@@ -112,7 +126,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     const slotRef = getDocRef('slots', selectedSlotId);
     const bookingRef = getDocRef('bookings', bookingId);
     const regRef = getDocRef('registrations', emailKey);
-    const leaderboardRef = getDocRef('leaderboard', bookingId);
+    const leaderboardRef = getDocRef('leaderboard_entries', bookingId);
 
     try {
       const createdBooking = await runTransaction(db, async (transaction) => {
@@ -161,7 +175,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           emailKey,
           participantEmail: currentUser.email!,
           participantName: regData.name || currentUser.displayName || 'Competitor',
-          participantGender: regData.gender || null,
+          participantGender: selectedGender,
           college: regData.college || 'RVCE',
           cadetStatus: regData.cadetStatus || 'Student',
           vertical: selectedVertical,
@@ -188,7 +202,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           ticketId,
           participantName: newBooking.participantName,
           college: newBooking.college,
-          gender: regData.gender || 'unspecified',
+          gender: selectedGender,
           cadetStatus: newBooking.cadetStatus,
           vertical: selectedVertical,
           slotId: selectedSlotId,
@@ -541,12 +555,51 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                 </div>
               </div>
 
-              {bookingError && (
-                <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{bookingError}</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {/* Gender division required selector */}
+                <div className="flex flex-col gap-1">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#DC2626] font-bold">
+                    Gender Division * (For Leaderboard)
+                  </span>
+                  <div className="inline-flex p-0.5 bg-[#0B0C10] border border-[#282B3A] rounded">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGender('Male');
+                        setBookingError(null);
+                      }}
+                      className={`px-3 py-1 font-mono text-xs uppercase tracking-wider transition-all rounded ${
+                        selectedGender === 'Male'
+                          ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow'
+                          : 'text-[#64748B] hover:text-[#F8FAFC]'
+                      }`}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGender('Female');
+                        setBookingError(null);
+                      }}
+                      className={`px-3 py-1 font-mono text-xs uppercase tracking-wider transition-all rounded ${
+                        selectedGender === 'Female'
+                          ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow'
+                          : 'text-[#64748B] hover:text-[#F8FAFC]'
+                      }`}
+                    >
+                      Female
+                    </button>
+                  </div>
                 </div>
-              )}
+
+                {bookingError && (
+                  <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{bookingError}</span>
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <button

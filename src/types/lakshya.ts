@@ -10,6 +10,13 @@ export interface Registration {
   name: string;
   email: string;
   googleUid?: string | null;
+  rvceEmail?: string | null;
+  dob?: string | null;
+  phone?: string | null;
+  usn?: string | null;
+  branch?: string | null;
+  yearOfStudy?: string | null;
+  college?: string | null;
   gender?: string | null;
   cadetType?: string | null;
   source: RegistrationSource;
@@ -58,6 +65,7 @@ export interface Booking {
   participantEmail: string;
   participantName: string;
   participantGender?: string | null;
+  gender?: string | null;
   vertical: LakshyaVertical;
   slotId: string;
   slotDateKey: string;

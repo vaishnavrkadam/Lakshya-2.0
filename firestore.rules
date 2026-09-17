@@ -20,39 +20,72 @@ service cloud.firestore {
       );
     }
 
+    // Registrations collection (allowlist & intake roster)
     match /artifacts/{appId}/public/data/registrations/{registrationId} {
       allow read: if signedIn() && (isAdmin() || registrationId == normalizedEmail());
-      allow create, update, delete: if isAdmin();
+      // Students can update their own gender division
+      allow update: if signedIn() && (
+        isAdmin() || 
+        (registrationId == normalizedEmail() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gender', 'updatedAt']))
+      );
+      allow create, delete: if isAdmin();
     }
 
+    // Slots collection (firing relays and capacities)
     match /artifacts/{appId}/public/data/slots/{slotId} {
-      allow read: if signedIn();
-      allow write: if isAdmin();
+      allow read: if true; // Publicly readable for schedule display
+      // Students can atomically reserve 1 slot seat; Admins have full management
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (request.resource.data.booked == resource.data.booked + 1 &&
+         request.resource.data.booked <= resource.data.capacity)
+      );
+      allow create, delete: if isAdmin();
     }
 
+    // Bookings collection (individual discipline tickets)
     match /artifacts/{appId}/public/data/bookings/{bookingId} {
       allow read: if signedIn() && (
         isAdmin() ||
         resource.data.participantEmail == normalizedEmail()
       );
-      allow create, update, delete: if isAdmin();
+      // Students can create their own self-service confirmed booking
+      allow create: if signedIn() && (
+        isAdmin() ||
+        (request.resource.data.participantEmail == normalizedEmail() &&
+         request.resource.data.checkedIn == false &&
+         request.resource.data.isDQ == false &&
+         request.resource.data.totalScore == null)
+      );
+      // Only Range Safety Officers / Admins can check-in or modify scores
+      allow update, delete: if isAdmin();
     }
 
+    // Leaderboard entries (public display and admin scoring)
     match /artifacts/{appId}/public/data/leaderboard_entries/{entryId} {
-      allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+      allow read: if true; // Public display for live screens
+      // Students can initialize their 0-score booking entry; scoring is admin-only
+      allow create: if signedIn() && (
+        isAdmin() ||
+        (request.resource.data.bestScore == 0 && request.resource.data.totalScore == 0)
+      );
+      allow update, delete: if isAdmin();
     }
 
+    // Audit trail (immutable append-only)
     match /artifacts/{appId}/public/data/audit_logs/{auditId} {
       allow read: if isAdmin();
-      allow create, update, delete: if false;
+      allow create: if signedIn();
+      allow update, delete: if false;
     }
 
+    // System configuration
     match /artifacts/{appId}/public/data/app_config/{configId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
+    // Catch-all
     match /{document=**} {
       allow read, write: if false;
     }

@@ -288,42 +288,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             </p>
           </div>
 
-          {/* Key Event Badges Grid (Extracted from Poster) */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-4 text-xs font-mono">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-white">
-              <Flame className="w-3.5 h-3.5 text-[#E51A1A]" />
-              <span>15 SHOTS</span>
-            </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-white">
-              <span className="text-green-400">🌱</span>
-              <span>PLANT A SAPLING</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-white">
-              <Calendar className="w-3.5 h-3.5 text-[#E51A1A]" />
-              <span>26th & 27th SEPTEMBER</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-white">
-              <MapPin className="w-3.5 h-3.5 text-[#E51A1A]" />
-              <span>RVCE CAMPUS</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-[#E51A1A] font-bold">
-              <Trophy className="w-3.5 h-3.5" />
-              <span>TOP 8 TO FINALS</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#2D2E36] rounded-full text-amber-400 font-bold">
-              <Award className="w-3.5 h-3.5" />
-              <span>10 ACTIVITY POINTS</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#17181F] border border-[#E51A1A]/40 rounded-full text-white font-bold">
-              <span>FEE: ₹350/-</span>
-            </div>
-          </div>
 
           {/* EXACTLY 3 PRIMARY CENTER ACTION BUTTONS */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
