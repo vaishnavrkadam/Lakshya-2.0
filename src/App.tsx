@@ -54,7 +54,8 @@ function MainApp() {
       const primaryRegsCol = getColRef('registrations');
       unsubRegsPrimary = onSnapshot(primaryRegsCol, (snapshot) => {
         snapshot.docs.forEach((d) => {
-          regsMap.set(d.id.toLowerCase(), { id: d.id, ...(d.data() as any) });
+          const data = d.data() as any;
+          regsMap.set(d.id.toLowerCase(), { id: d.id, email: data.email || d.id, ...data });
         });
         syncRegs();
       }, console.error);
@@ -66,7 +67,8 @@ function MainApp() {
       const altRegsCol = collection(db, `artifacts/${altAppId}/public/data/registrations`);
       unsubRegsFallback = onSnapshot(altRegsCol, (snapshot) => {
         snapshot.docs.forEach((d) => {
-          regsMap.set(d.id.toLowerCase(), { id: d.id, ...(d.data() as any) });
+          const data = d.data() as any;
+          regsMap.set(d.id.toLowerCase(), { id: d.id, email: data.email || d.id, ...data });
         });
         syncRegs();
       }, () => {
@@ -182,7 +184,7 @@ function MainApp() {
                 onClick={() => setView('digital-pass')} 
                 className="font-mono text-xs uppercase tracking-wider text-[#64748B] hover:text-[#F8FAFC] transition-colors"
               >
-                Cadet Pass
+                Participant Pass
               </button>
               {isAdmin && (
                 <button 

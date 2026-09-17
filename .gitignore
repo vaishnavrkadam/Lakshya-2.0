@@ -37,3 +37,11 @@ ui-debug.log
 # Functions build
 functions/node_modules/
 functions/lib/
+
+# TypeScript Build Info
+*.tsbuildinfo
+
+# Unused generated directories
+src/dataconnect-generated/
+.system_generated/
+logos/

@@ -101,7 +101,7 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
         {/* Details Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
           <div className="p-3 bg-[#0B0C10] border border-[#282B3A]">
-            <span className="font-mono text-[10px] text-[#64748B] uppercase block">CADET CATEGORY</span>
+            <span className="font-mono text-[10px] text-[#64748B] uppercase block">PARTICIPANT CATEGORY</span>
             <span className="font-mono font-bold text-[#F8FAFC] mt-0.5 block">{registration?.cadetType || 'Standard Competitor'}</span>
           </div>
           <div className="p-3 bg-[#0B0C10] border border-[#282B3A]">
@@ -171,7 +171,7 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
                     className="w-full py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Ticket className="w-3.5 h-3.5" />
-                    <span>[ View Air Rifle Cadet Pass ]</span>
+                    <span>[ View Air Rifle Pass ]</span>
                   </button>
                 </div>
               </div>
@@ -233,7 +233,7 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
                     className="w-full py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Ticket className="w-3.5 h-3.5" />
-                    <span>[ View Air Pistol Cadet Pass ]</span>
+                    <span>[ View Air Pistol Pass ]</span>
                   </button>
                 </div>
               </div>

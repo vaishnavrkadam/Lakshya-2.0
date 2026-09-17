@@ -34,7 +34,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
   const navItems: NavItem[] = [
     { id: 'overview', label: 'Home', icon: Home },
     { id: 'slot-booking', label: 'Slot Allocation', icon: Calendar },
-    { id: 'digital-pass', label: 'Cadet Pass', icon: Ticket },
+    { id: 'digital-pass', label: 'Participant Pass', icon: Ticket },
     { id: 'live-leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'profile', label: 'Profile', icon: User },
   ];

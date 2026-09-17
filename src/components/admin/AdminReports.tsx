@@ -49,7 +49,7 @@ export default function AdminReports({ slots, bookings, registrations }: AdminRe
 
   // CSV Data Exports
   const handleExportRegistrationsCsv = () => {
-    const headers = ['Full Name', 'Email Address', 'Gender', 'Cadet Category', 'Eligible', 'Source'];
+    const headers = ['Full Name', 'Email Address', 'Gender', 'Participant Category', 'Eligible', 'Source'];
     const rows = registrations.map((r) => [
       `"${(r.name || '').replace(/"/g, '""')}"`,
       `"${r.email}"`,

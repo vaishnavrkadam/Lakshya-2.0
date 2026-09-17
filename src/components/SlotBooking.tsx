@@ -374,7 +374,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                 className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2"
               >
                 <Ticket className="w-3.5 h-3.5" />
-                <span>[ View Cadet Pass ]</span>
+                <span>[ View Participant Pass ]</span>
               </button>
               {!existingOtherBooking && (
                 <button
@@ -432,7 +432,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2"
             >
               <Ticket className="w-3.5 h-3.5" />
-              <span>[ Open Cadet Pass ]</span>
+              <span>[ Open Participant Pass ]</span>
             </button>
             {!existingOtherBooking && (
               <button

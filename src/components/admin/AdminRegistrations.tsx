@@ -59,26 +59,29 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     return { rifleBooked: rifle, pistolBooked: pistol };
   }, [bookings]);
 
-  // Filtered registrations list with deduplication of any legacy alias records
-  const filteredList = useMemo(() => {
-    const seenKeys = new Set<string>();
-
+  // Genuine distinct registrations (excluding alias pointer docs)
+  const distinctRegistrations = useMemo(() => {
+    const seenEmails = new Set<string>();
     return registrations.filter((reg) => {
-      // Deduplicate if doc is an alias or shares the same non-empty USN
-      const email = reg.email.toLowerCase();
-      const usn = (reg.usn || '').toUpperCase().trim();
-      const dedupeKey = (usn && usn.length > 3) ? `usn_${usn}` : `em_${email}`;
+      // Exclude alias documents created as secondary pointers
+      if ((reg as any).isAlias) return false;
+      const em = (reg.email || reg.id || '').toLowerCase().trim();
+      if (!em || seenEmails.has(em)) return false;
+      seenEmails.add(em);
+      return true;
+    });
+  }, [registrations]);
 
-      if (seenKeys.has(dedupeKey)) {
-        return false;
-      }
-      seenKeys.add(dedupeKey);
-
-      const name = reg.name.toLowerCase();
-      const branch = (reg.branch || '').toLowerCase();
+  // Filtered registrations list by search query and active tab
+  const filteredList = useMemo(() => {
+    return distinctRegistrations.filter((reg) => {
+      const email = (reg.email || reg.id || '').toLowerCase().trim();
+      const name = (reg.name || '').toLowerCase().trim();
+      const usn = (reg.usn || '').toLowerCase().trim();
+      const branch = (reg.branch || '').toLowerCase().trim();
       const q = searchQuery.toLowerCase().trim();
 
-      if (q && !email.includes(q) && !name.includes(q) && !usn.toLowerCase().includes(q) && !branch.includes(q)) {
+      if (q && !email.includes(q) && !name.includes(q) && !usn.includes(q) && !branch.includes(q)) {
         return false;
       }
 
@@ -92,7 +95,7 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
 
       return true;
     });
-  }, [registrations, searchQuery, activeFilter, rifleBooked, pistolBooked]);
+  }, [distinctRegistrations, searchQuery, activeFilter, rifleBooked, pistolBooked]);
 
   const handleToggleEligibility = async (reg: Registration) => {
     try {
@@ -322,7 +325,7 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
               : 'bg-[#12131A] border border-[#282B3A] text-[#64748B] hover:text-[#F8FAFC]'
           }`}
         >
-          All Roster ({registrations.length})
+          All Roster ({distinctRegistrations.length})
         </button>
         <button
           onClick={() => setActiveFilter('unbooked')}

@@ -47,13 +47,16 @@ export function computeRankedLeaderboard(
       ? Number(rawScore) 
       : null;
     const isDQ = Boolean(rawEntry.isDQ || (rawEntry as any).disqualified);
-    const isPending = !rawEntry.scoreStatus || rawEntry.scoreStatus === 'pending' || scoreNum === null;
+    
+    // Only consider scored if scoreStatus is published, lastScoreUpdatedAt exists, and score > 0
+    const hasLiveScore = (rawEntry.scoreStatus === 'published' || (rawEntry as any).lastScoreUpdatedAt != null) && scoreNum !== null && scoreNum > 0;
+    const isPending = !hasLiveScore && !isDQ;
 
     const entry: LeaderboardEntry = {
       ...rawEntry,
       score: scoreNum,
       isDQ,
-      scoreStatus: (rawEntry.scoreStatus || (scoreNum !== null ? 'published' : 'pending')) as any,
+      scoreStatus: hasLiveScore ? 'published' : 'pending',
     };
 
     if (isDQ || isPending) {
@@ -136,18 +139,6 @@ export function computeRankedLeaderboard(
     });
   }
 
-  // Sort pending / DQ
-  pendingOrDQ.sort((a, b) => {
-    if (a.isDQ && !b.isDQ) return 1;
-    if (!a.isDQ && b.isDQ) return -1;
-    return (a.participantName || '').localeCompare(b.participantName || '');
-  });
-
-  const unrankedResults: RankedEntry[] = pendingOrDQ.map((entry) => ({
-    ...entry,
-    rank: null,
-    isRanked: false,
-  }));
-
-  return [...rankedResults, ...unrankedResults];
+  // Return only competitors with verified updated live scores
+  return rankedResults;
 }

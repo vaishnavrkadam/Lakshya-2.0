@@ -76,7 +76,7 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
       <div className="border-b border-[#282B3A] pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <span className="font-mono text-xs uppercase tracking-widest text-[#DC2626] block">
-            OFFICIAL CADET CREDENTIALS
+            OFFICIAL PARTICIPANT CREDENTIALS
           </span>
           <h1 className="font-headline-lg text-3xl sm:text-4xl text-[#F8FAFC] uppercase tracking-wide font-serif">
             Digital Range Passes
@@ -164,7 +164,7 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
                     </h3>
                     <p className="font-mono text-xs text-[#64748B]">{booking.participantEmail}</p>
                     <p className="font-mono text-[11px] text-[#64748B] mt-0.5">
-                      {booking.college || 'RVCE'} · {booking.cadetStatus || 'Student'}
+                      {booking.college || 'RVCE'} · Participant
                     </p>
                   </div>
                   <div className="text-right">

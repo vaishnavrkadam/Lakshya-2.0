@@ -209,55 +209,55 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-[#F8FAFC]">
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Vertical switcher tabs */}
-        <div className="inline-flex p-1 bg-[#E8E0D2] rounded-lg border border-[#CFC6B6]">
+        <div className="inline-flex p-1 bg-[#12131A] rounded-lg border border-[#282B3A]">
           <button
             onClick={() => {
               setSelectedVertical('Air Rifle');
               setExpandedBookingId(null);
             }}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
               selectedVertical === 'Air Rifle'
-                ? 'bg-[#171717] text-[#F3EEE3] shadow-sm'
-                : 'text-[#6F6A61] hover:text-[#171717]'
+                ? 'bg-[#DC2626] text-white shadow-sm'
+                : 'text-[#8E909E] hover:text-white'
             }`}
           >
-            Air Rifle Scoring (10-Shot)
+            Air Rifle (10-Shot)
           </button>
           <button
             onClick={() => {
               setSelectedVertical('Air Pistol');
               setExpandedBookingId(null);
             }}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
               selectedVertical === 'Air Pistol'
-                ? 'bg-[#171717] text-[#F3EEE3] shadow-sm'
-                : 'text-[#6F6A61] hover:text-[#171717]'
+                ? 'bg-[#DC2626] text-white shadow-sm'
+                : 'text-[#8E909E] hover:text-white'
             }`}
           >
-            Air Pistol Scoring (10-Shot)
+            Air Pistol (10-Shot)
           </button>
         </div>
 
         {/* Search */}
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#6F6A61] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#8E909E] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search competitor, ticket or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#FAF7F2] border border-[#CFC6B6] rounded-lg text-xs font-medium text-[#171717] focus:outline-none focus:border-[#171717]"
+            className="w-full pl-9 pr-4 py-2 bg-[#12131A] border border-[#282B3A] rounded-lg text-xs font-mono text-[#F8FAFC] placeholder:text-[#64748B] focus:outline-none focus:border-[#DC2626]"
           />
         </div>
       </div>
 
       {statusAlert && (
-        <div className="p-3 bg-[#315D4C]/15 border border-[#315D4C] text-[#315D4C] text-xs font-mono rounded-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <div className="p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-mono rounded-lg flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{statusAlert}</span>
         </div>
       )}
@@ -265,10 +265,10 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
       {/* Expandable Participant Cards */}
       <div className="space-y-3">
         {filteredBookings.length === 0 ? (
-          <div className="p-12 text-center space-y-2 bg-[#FAF7F2] border border-[#CFC6B6] rounded-xl">
-            <Target className="w-8 h-8 text-[#6F6A61] mx-auto opacity-50" />
-            <p className="font-serif text-lg text-[#171717]">No bookings found for {selectedVertical}</p>
-            <p className="text-xs text-[#6F6A61]">Competitors will appear here as slots are booked.</p>
+          <div className="p-12 text-center space-y-2 bg-[#12131A] border border-[#282B3A] rounded-xl">
+            <Target className="w-8 h-8 text-[#64748B] mx-auto opacity-50" />
+            <p className="font-sans font-bold text-lg text-[#F8FAFC]">No bookings found for {selectedVertical}</p>
+            <p className="text-xs font-mono text-[#8E909E]">Competitors will appear here as slots are booked.</p>
           </div>
         ) : (
           filteredBookings.map((booking) => {
@@ -279,27 +279,27 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
             return (
               <div
                 key={booking.id}
-                className="bg-[#FAF7F2] border border-[#CFC6B6] rounded-xl overflow-hidden shadow-sm transition-all"
+                className="bg-[#12131A] border border-[#282B3A] hover:border-[#3E4256] rounded-xl overflow-hidden shadow-lg transition-all"
               >
                 {/* Collapsed Card Header */}
                 <div
                   onClick={() => handleExpandBooking(booking)}
-                  className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-[#E8E0D2]/40 transition-colors"
+                  className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-[#181A24] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-bold px-2 py-1 bg-[#171717] text-[#F3EEE3] rounded">
+                    <span className="font-mono text-xs font-bold px-2.5 py-1 bg-[#0B0C10] border border-[#282B3A] text-[#DC2626] rounded">
                       {booking.ticketId}
                     </span>
                     <div>
-                      <div className="font-serif text-base font-bold text-[#171717] flex items-center gap-2">
+                      <div className="font-sans text-base font-bold text-[#F8FAFC] flex items-center gap-2">
                         <span>{booking.participantName}</span>
                         {booking.participantGender && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#E8E0D2] rounded text-[#6F6A61]">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#1F202B] rounded text-[#8E909E] border border-[#2E3040]">
                             {booking.participantGender}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-mono text-[#6F6A61] block">
+                      <span className="text-xs font-mono text-[#8E909E] block">
                         {booking.participantEmail} · {booking.slotTimeLabel} ({booking.slotDateLabel})
                       </span>
                     </div>
@@ -308,64 +308,70 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
                   <div className="flex items-center gap-4 self-end md:self-auto">
                     {/* Attendance Pill */}
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        booking.checkedIn ? 'bg-[#315D4C] text-white' : 'bg-amber-100 text-amber-800'
+                      className={`text-[10px] font-mono px-2.5 py-0.5 rounded font-semibold border ${
+                        booking.checkedIn 
+                          ? 'bg-emerald-950/70 border-emerald-800 text-emerald-400' 
+                          : 'bg-amber-950/60 border-amber-800 text-amber-400'
                       }`}
                     >
-                      {booking.checkedIn ? 'Checked In' : 'Pending'}
+                      {booking.checkedIn ? 'Checked In' : 'Pending Check-In'}
                     </span>
 
                     {/* Score summary */}
                     <div className="text-right font-mono">
                       {booking.isDQ ? (
-                        <span className="text-[#9B2C2C] font-bold text-xs bg-red-100 px-2 py-0.5 rounded">
+                        <span className="text-red-400 font-bold text-xs bg-red-950/70 border border-red-800 px-2 py-0.5 rounded">
                           DISQUALIFIED
                         </span>
-                      ) : booking.totalScore !== null ? (
+                      ) : booking.totalScore !== null && booking.totalScore !== undefined ? (
                         <div>
-                          <span className="text-lg font-bold text-[#171717]">
-                            {booking.totalScore.toFixed(1)}
+                          <span className="text-lg font-bold text-[#F8FAFC]">
+                            {booking.totalScore.toFixed(1)} <span className="text-xs text-[#8E909E]">PTS</span>
                           </span>
-                          <span className="text-[10px] text-[#6F6A61] block">
+                          <span className="text-[10px] text-[#8E909E] block">
                             {current10s}× 10s · {current9s}× 9s {booking.penalty ? `(-${booking.penalty}p)` : ''}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#6F6A61] italic">Not Scored</span>
+                        <span className="text-xs text-[#64748B] italic">Not Scored</span>
                       )}
                     </div>
 
-                    {/* Action Chevron */}
+                    {/* Action Button */}
                     <button
                       type="button"
-                      className="px-3 py-1.5 border border-[#CFC6B6] rounded text-xs font-medium text-[#171717] hover:bg-[#171717] hover:text-[#F3EEE3] transition-colors"
+                      className={`px-3 py-1.5 border rounded text-xs font-mono font-semibold transition-colors ${
+                        isExpanded
+                          ? 'bg-[#DC2626] border-[#DC2626] text-white'
+                          : 'border-[#282B3A] text-[#F8FAFC] hover:bg-[#282B3A]'
+                      }`}
                     >
-                      {isExpanded ? 'Collapse' : 'Scorecard'}
+                      {isExpanded ? 'Close Scorecard' : 'Enter Scores'}
                     </button>
                   </div>
                 </div>
 
                 {/* Expanded Official 10-Shot Scorecard Form */}
                 {isExpanded && (
-                  <div className="border-t border-[#CFC6B6] bg-white p-6 space-y-6 animate-fade-in">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8E0D2] pb-3">
+                  <div className="border-t border-[#282B3A] bg-[#0E0F15] p-6 space-y-6 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#282B3A] pb-4">
                       <div>
-                        <h4 className="font-serif text-lg font-bold text-[#171717] flex items-center gap-2">
-                          <Target className="w-5 h-5 text-[#E79A19]" />
+                        <h4 className="text-base font-bold text-[#F8FAFC] flex items-center gap-2 font-sans">
+                          <Target className="w-5 h-5 text-[#DC2626]" />
                           <span>Official 10-Shot Scorecard Entry</span>
                         </h4>
-                        <p className="text-xs text-[#6F6A61]">
-                          Enter score value (0.0 to 10.9) for each target round shot.
+                        <p className="text-xs font-mono text-[#8E909E] mt-0.5">
+                          Enter verified shot decimal values (0.0 to 10.9) according to ISSF target ring values.
                         </p>
                       </div>
 
                       {/* Multi-Scorecard Round Selector */}
                       <div className="flex items-center gap-2 text-xs font-mono">
-                        <span className="text-[#6F6A61] uppercase">Round / Re-entry:</span>
+                        <span className="text-[#8E909E] uppercase">Round:</span>
                         <select
                           value={currentRound}
                           onChange={(e) => setCurrentRound(Number(e.target.value))}
-                          className="p-1.5 bg-[#FAF7F2] border border-[#CFC6B6] rounded font-semibold text-[#171717]"
+                          className="p-1.5 bg-[#0B0C10] border border-[#282B3A] rounded font-semibold text-[#F8FAFC] focus:outline-none focus:border-[#DC2626]"
                         >
                           <option value={1}>Round 1 (Official)</option>
                           <option value={2}>Round 2 (Re-Entry)</option>
@@ -377,47 +383,51 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
 
                     {/* 10 Individual Shot Inputs */}
                     <div>
-                      <label className="text-xs font-mono uppercase text-[#6F6A61] block mb-2 font-semibold">
+                      <label className="text-xs font-mono uppercase text-[#8E909E] block mb-2 font-semibold">
                         Individual Target Shots (1 to 10)
                       </label>
                       <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                        {shots.map((shotVal, idx) => (
-                          <div key={idx} className="space-y-1 text-center">
-                            <span className="text-[10px] font-mono text-[#6F6A61] block">
-                              Shot {idx + 1}
-                            </span>
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="10.9"
-                              value={shotVal}
-                              onChange={(e) => handleShotChange(idx, e.target.value)}
-                              placeholder="0"
-                              className={`w-full p-2 text-center font-mono font-bold text-sm bg-[#FAF7F2] border rounded focus:outline-none focus:border-[#171717] ${
-                                parseFloat(shotVal) >= 10
-                                  ? 'border-[#E79A19] bg-amber-50 text-[#171717]'
-                                  : 'border-[#CFC6B6]'
-                              }`}
-                            />
-                          </div>
-                        ))}
+                        {shots.map((shotVal, idx) => {
+                          const num = parseFloat(shotVal);
+                          const isTen = !isNaN(num) && num >= 10;
+                          return (
+                            <div key={idx} className="space-y-1 text-center">
+                              <span className="text-[10px] font-mono text-[#8E909E] block">
+                                Shot {idx + 1}
+                              </span>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10.9"
+                                value={shotVal}
+                                onChange={(e) => handleShotChange(idx, e.target.value)}
+                                placeholder="0"
+                                className={`w-full p-2.5 text-center font-mono font-bold text-base rounded focus:outline-none transition-all ${
+                                  isTen
+                                    ? 'bg-amber-950/30 border-2 border-amber-400 text-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.3)]'
+                                    : 'bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]'
+                                }`}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
                     {/* Scoring Metrics & Penalty Adjustment */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#FAF7F2] p-4 rounded-xl border border-[#CFC6B6]">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#0B0C10] p-4 rounded-xl border border-[#282B3A]">
                       {/* Shot Points Sum */}
                       <div>
-                        <span className="text-[10px] font-mono uppercase text-[#6F6A61] block">Shots Sum</span>
-                        <span className="text-xl font-mono font-bold text-[#171717]">
+                        <span className="text-[10px] font-mono uppercase text-[#8E909E] block">Shots Sum</span>
+                        <span className="text-xl font-mono font-bold text-[#F8FAFC]">
                           {shotsSum.toFixed(1)}
                         </span>
                       </div>
 
                       {/* Penalty Deductions */}
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-[#6F6A61] block">
+                        <label className="text-[10px] font-mono uppercase text-[#8E909E] block">
                           Penalty Points
                         </label>
                         <input
@@ -426,35 +436,35 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
                           min="0"
                           value={penalty}
                           onChange={(e) => setPenalty(e.target.value)}
-                          className="w-24 p-1.5 bg-white border border-[#CFC6B6] rounded font-mono text-sm font-bold text-red-600 focus:outline-none"
+                          className="w-24 p-1.5 bg-[#12131A] border border-[#282B3A] rounded font-mono text-sm font-bold text-red-400 focus:outline-none focus:border-[#DC2626]"
                         />
                       </div>
 
                       {/* Tie-breaker statistics */}
                       <div>
-                        <span className="text-[10px] font-mono uppercase text-[#6F6A61] block">Tie-Breakers</span>
-                        <span className="text-xs font-mono font-semibold text-[#171717]">
-                          {count10s} Tens (10s) · {count9s} Nines (9s)
+                        <span className="text-[10px] font-mono uppercase text-[#8E909E] block">Tie-Breakers</span>
+                        <span className="text-xs font-mono font-semibold text-[#F8FAFC]">
+                          <span className="text-amber-400">{count10s}× 10s</span> · <span className="text-[#8E909E]">{count9s}× 9s</span>
                         </span>
                       </div>
 
                       {/* Final Net Score */}
                       <div className="text-right">
-                        <span className="text-[10px] font-mono uppercase text-[#6F6A61] block">Net Final Score</span>
-                        <span className="text-2xl font-mono font-black text-[#E79A19]">
+                        <span className="text-[10px] font-mono uppercase text-[#8E909E] block">Net Final Score</span>
+                        <span className="text-2xl font-mono font-black text-[#DC2626]">
                           {netScore.toFixed(1)}
                         </span>
                       </div>
                     </div>
 
-                    {/* Disqualification & Notes */}
+                    {/* Disqualification & Actions */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-red-700 font-semibold">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-red-400 font-semibold">
                         <input
                           type="checkbox"
                           checked={isDQ}
                           onChange={(e) => setIsDQ(e.target.checked)}
-                          className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                          className="w-4 h-4 rounded bg-[#0B0C10] border-[#282B3A] text-[#DC2626] focus:ring-[#DC2626]"
                         />
                         <span>Mark this Scorecard as Disqualified (DQ)</span>
                       </label>
@@ -463,7 +473,7 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
                         <button
                           type="button"
                           onClick={() => setExpandedBookingId(null)}
-                          className="px-4 py-2 border border-[#CFC6B6] rounded hover:bg-[#E8E0D2] text-xs font-medium"
+                          className="px-4 py-2 border border-[#282B3A] bg-[#12131A] text-[#8E909E] hover:text-[#F8FAFC] rounded text-xs font-mono font-semibold transition-colors"
                         >
                           Cancel
                         </button>
@@ -471,9 +481,9 @@ export default function AdminLeaderboard({ bookings }: AdminLeaderboardProps) {
                           type="button"
                           disabled={submitting}
                           onClick={() => handleSaveScorecard(booking)}
-                          className="px-6 py-2 bg-[#171717] hover:bg-[#333333] text-[#F3EEE3] text-xs font-semibold rounded shadow flex items-center gap-1.5 transition-all"
+                          className="px-6 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-white text-xs font-mono font-bold uppercase tracking-wider rounded shadow flex items-center gap-2 transition-all"
                         >
-                          <Save className="w-4 h-4 text-[#E79A19]" />
+                          <Save className="w-4 h-4 text-white" />
                           <span>{submitting ? 'Saving...' : `Save Round ${currentRound} Score`}</span>
                         </button>
                       </div>
