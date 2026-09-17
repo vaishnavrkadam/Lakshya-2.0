@@ -1,24 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Crosshair, 
-  Calendar, 
-  Trophy, 
-  ShieldCheck, 
-  ChevronRight, 
   Target, 
-  Clock, 
+  Ticket, 
+  Trophy, 
+  Calendar, 
   MapPin, 
-  ExternalLink,
-  Award,
-  Ticket,
-  Sparkles,
-  Info,
-  X,
-  Flame,
-  ArrowDown
+  Award, 
+  ShieldCheck, 
+  Flame, 
+  ChevronRight, 
+  ChevronLeft,
+  X, 
+  Crosshair, 
+  CheckCircle2, 
+  ArrowDown, 
+  Maximize2 
 } from 'lucide-react';
-import { REGISTRATION_FORM_URL } from '../config/lakshya';
 
 interface WeaponSpec {
   id: string;
@@ -59,7 +57,7 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Dry-fire training mechanism with zero hammer wear',
       'Counter-balanced recoil compensator for zero muzzle rise'
     ],
-    imageSrc: '/achilles.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7YfMWFIBEEi_mjbxFAttfDm8j8x6FKwhMPoNQI_W5uEwcoYD3RGBhjZJ9yw9SvKOMAdjhJo61nPK8aWA9X5a-c1X0sRYp9RyojZ8FAFwVEuMGKVVHoU458tSIRshuqfuPnCUSPo_WxrsTOacaWpkY3KNYejtGSz8wSX_GWdKECsnIbAsCfE-oKK10BRXzO10hqpu-ZuGqqRBN2KEQ6jBrGstkdQ1TYYXxMtwjB7ed-MXs9BN8GEK7'
   },
   {
     id: 'achilles-x3',
@@ -80,7 +78,7 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Adjustable butt plate with vertical and tilt correction',
       'Ambidextrous match grip with stippled palm swell'
     ],
-    imageSrc: '/achilles.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDzFg3tQRHB7cudLZizC8trgWsot1b20hBrqKhBB1lQci07Qvxee2yixHvBSVBb15Lv6yJeSwhZHDbz3S6wWiZckd6GeszAN6oLYwvS0RLhtg26WF_GL2JCLzyK_sYB12rlqazOWLPZEMC1gY1oyEwuPhXU7GijVAcsyVpvwN13RBa1rKQwhrv_y9QAH_FpWtCoxmMikjsSxQn3nIS9EzeYUlRJmr7QAPH77AVkMgLrybjEg8E3H4Kj'
   },
   {
     id: 'minotaur-px120',
@@ -101,7 +99,7 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Integral suppressor baffle array for quiet discharge',
       'Side-lever biathlon-style cocking mechanism'
     ],
-    imageSrc: '/minotaur.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWtehKwhFga6uil6TEh6FH3hrpGlV1tdzZSLliAZMFtx93v9zlpydgE_AycK8i971gr6_pswnGCPCAGaSr-jLB90DIXTdAG1HjDT4Bc9uAQmxK9unGrC4hEo153CpTj9nQHbcChcvdND-vQDZz4r3YsKxv9rG7KQMP5KQViyd8smnG520GO0AoFjzmH24T1XA_n4QkHhUgBFWTcosk7Oab-T2C27k8vDa5eWHAunsj_WK46qSN6vr9'
   },
   {
     id: 'pp75-champion',
@@ -122,7 +120,7 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Low bore axis directly aligned with wrist tendon',
       'Air stabilizer porting exhausting gas upward to counter muzzle jump'
     ],
-    imageSrc: '/pp75.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC2YxHqBWwye5JH3F1CUO5idebOBAd7Dm_SfN9nVR_CYm61oZftUd2XENOOHZKI-r7nrJehJ4sejJhBKW80wdb-4o4OoEFRgn4_-Fs2FCvFVTBOZOOw3YWm9af_FOAiECRRTtbhIRbYbXqDbhLSJrg8rJ5V7w8QLgQUkDi0BFhkqWWJYwwHJ-MgmxNbj8a2jPLJOMa_PHvnCNbI7B-YLxe3HfnGMeXn5ntimNCZv_dg5WAd_DqXYDMW'
   },
   {
     id: 'benchrest-special',
@@ -143,7 +141,7 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Precision regulated air metering chamber',
       'Hand-lapped crown with 11-degree target bevel'
     ],
-    imageSrc: '/benchrest.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDgO0ynpqlBonf0HHTJ_gcxKN8h4fMOmRPCq0T5fbPGp9Vy1rwYYMU389uEXYzrEYOB0DUURooxyXbBbUrl3rogW92BF40cgcaIgOljFnqptzPJ3HcwLgTjyPpAWeknULo0B1Uw6de9TqCFONeMFDdiEbkt80GYYXozhEcb7lDW6ienhVslFhfGjU0AUmmJ0BMxAti-fXl7zRgsQSFK1Nh0JgjH10nXDty-T0T67p74Pc6eEcoe5Dfd'
   },
   {
     id: 'pp55-match-pro',
@@ -164,13 +162,81 @@ const SPONSOR_WEAPONS: WeaponSpec[] = [
       'Smooth stroke cocking arm with low effort cycle',
       'Regulation ISSF minimum trigger weight compliance'
     ],
-    imageSrc: '/pp55.jpg'
+    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXfcHTnPlL-zU2nQrBVz8IpOtwlNKSB8uLB2OlzZ7EG315-Xml8U7Zz_UzoyUWozXemR1ZLc9Dz3YmQ_scsVyz8RoAXIUs1iiwGcJ2yq67c-PYkSpjFo5w23s1fbcvxV3maUBdhlM5rZZ3L0-farO_NMsx7Uo_0_UUjyWFewXcOoTvT4sTzdSzqqsBEv7Wd3s4mt5R0ONSC-h6x-9sIbjWNRURYi7P_sjUx4_Odj5as2hyec_7tu8U'
   }
 ];
 
 export default function Overview({ setView }: { setView: (v: string) => void }) {
   const { currentUser, registration, loginWithGoogle, setOnboardingOpen } = useAuth();
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponSpec | null>(null);
+
+  // Gallery slider state (Single-Card Stack Display)
+  const [activeIdx, setActiveIdx] = useState<number>(0);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const dragStartRef = useRef<number>(0);
+
+  const handleNext = () => {
+    setActiveIdx((prev) => (prev + 1) % SPONSOR_WEAPONS.length);
+  };
+
+  const handlePrev = () => {
+    setActiveIdx((prev) => (prev - 1 + SPONSOR_WEAPONS.length) % SPONSOR_WEAPONS.length);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedWeapon) return;
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedWeapon]);
+
+  // Touch gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartRef.current = e.touches[0].clientX;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentX = e.touches[0].clientX;
+    setDragOffset(currentX - dragStartRef.current);
+  };
+
+  const handleTouchEnd = () => {
+    if (dragOffset > 70) {
+      handlePrev();
+    } else if (dragOffset < -70) {
+      handleNext();
+    }
+    setDragOffset(0);
+    setIsDragging(false);
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartRef.current = e.clientX;
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setDragOffset(e.clientX - dragStartRef.current);
+  };
+
+  const handleMouseUp = () => {
+    if (dragOffset > 70) {
+      handlePrev();
+    } else if (dragOffset < -70) {
+      handleNext();
+    }
+    setDragOffset(0);
+    setIsDragging(false);
+  };
 
   // 1. Slot Booking CTA Handler
   const handleBookingCta = () => {
@@ -197,6 +263,9 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
     setView('live-leaderboard');
   };
 
+  const currentWeapon = SPONSOR_WEAPONS[activeIdx];
+  const nextWeapon = SPONSOR_WEAPONS[(activeIdx + 1) % SPONSOR_WEAPONS.length];
+
   return (
     <div className="bg-[#0B0C10] text-[#E0E0E0] min-h-screen">
       {/* Institutional Top Bar (Matching Poster Header) */}
@@ -219,7 +288,6 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             <span className="font-bold tracking-wider text-white">NCC RVCE</span>
             <span className="text-[#E51A1A] font-extrabold text-sm">✕</span>
             <div className="flex items-center gap-1.5">
-              {/* Bow and Arrow Vector for GARE */}
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M18 6H9M18 6V15" />
                 <circle cx="12" cy="12" r="9" strokeOpacity="0.3" />
@@ -240,12 +308,11 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
 
       {/* Hero Section: Centered Poster Typography & Target Reticle */}
       <section className="relative overflow-hidden py-16 sm:py-24 border-b border-[#222329] flex flex-col items-center justify-center text-center">
-        {/* Concentric Target Background Rings (Matching the Poster) */}
+        {/* Concentric Target Background Rings */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
           <div className="w-[850px] h-[850px] rounded-full border border-white/20 flex items-center justify-center">
             <div className="w-[680px] h-[680px] rounded-full border border-white/30 flex items-center justify-center">
               <div className="w-[500px] h-[500px] rounded-full border border-white/40 flex items-center justify-center">
-                {/* Red Target Ring from Poster */}
                 <div className="w-[340px] h-[340px] rounded-full border-2 border-[#E51A1A]/70 flex items-center justify-center animate-pulse">
                   <div className="w-[180px] h-[180px] rounded-full border border-[#E51A1A]/90 flex items-center justify-center">
                     <div className="w-6 h-6 rounded-full bg-[#E51A1A] shadow-[0_0_20px_#E51A1A]"></div>
@@ -254,7 +321,6 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               </div>
             </div>
           </div>
-          {/* Target Crosshair Lines */}
           <div className="absolute w-full h-[1px] bg-white/10"></div>
           <div className="absolute h-full w-[1px] bg-white/10"></div>
         </div>
@@ -264,14 +330,12 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
 
         {/* Center Content Box */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          {/* PRESENTS Subheading */}
           <div className="inline-block">
             <span className="text-xs sm:text-sm font-mono tracking-[0.35em] text-[#B0B0BA] uppercase">
               PRESENTS
             </span>
           </div>
 
-          {/* Main Poster Typography Title: LAKSHYA 2.0 */}
           <div className="space-y-2 select-none">
             <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter uppercase font-sans drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]">
               <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
@@ -282,13 +346,10 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               </span>
             </h1>
 
-            {/* Sub-headline from Poster */}
             <p className="text-sm sm:text-lg md:text-xl font-mono tracking-[0.25em] text-[#D0D0DA] uppercase font-bold">
               10M RIFLE AND PISTOL SHOOTING EXPERIENCE
             </p>
           </div>
-
-
 
           {/* EXACTLY 3 PRIMARY CENTER ACTION BUTTONS */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
@@ -310,13 +371,13 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               <span>Retrieve Digital Pass</span>
             </button>
 
-            {/* Button 3: Live Leaderboard Access */}
+            {/* Button 3: Live Leaderboard */}
             <button
               onClick={handleLeaderboardCta}
-              className="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white/5 border border-white/30 text-white font-bold text-sm tracking-wider uppercase rounded-lg shadow-sm flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto px-8 py-4 bg-[#1B1C24] hover:bg-[#252733] border border-[#3A3C4A] text-white font-bold text-sm tracking-wider uppercase rounded-lg shadow-lg flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95"
             >
-              <Trophy className="w-5 h-5 text-amber-400" />
-              <span>Live Leaderboard</span>
+              <Trophy className="w-5 h-5 text-[#E51A1A]" />
+              <span>View Leaderboard</span>
             </button>
           </div>
 
@@ -352,92 +413,169 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
         </div>
       </section>
 
-      {/* SCROLLING DOWN: Pictures of Rifles of Sponsors with Animated Popups */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
+      {/* GALLERY DISPLAY: Single Weapon Card Showcase with Interactive Slide */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8 select-none">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#222329] pb-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#E51A1A]">
               <Crosshair className="w-4 h-4" />
-              <span>FEATURING WEAPON DISPLAY</span>
+              <span>OFFICIAL MATCH ARMORY & EQUIPMENT</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight mt-1">
-              PCP Air Rifles & Match Pistols
+            <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight mt-1 font-sans">
+              Sponsor Weapons Gallery
             </h2>
           </div>
           <p className="text-xs font-mono text-[#888892] max-w-md md:text-right">
-            Click on any competition weapon below to pop up full ballistic blueprints, cylinder bar pressures, and match triggers.
+            Swipe or use controls to inspect models · Click active weapon to open full ballistic specifications.
           </p>
         </div>
 
-        {/* Weapons Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SPONSOR_WEAPONS.map((weapon) => (
-            <div
-              key={weapon.id}
-              onClick={() => setSelectedWeapon(weapon)}
-              className="bg-[#14151C] border border-[#262733] hover:border-[#E51A1A] rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between"
-            >
-              {/* Image & Type Badge */}
-              <div className="h-52 bg-[#0E0F14] overflow-hidden relative flex items-center justify-center p-4">
-                <img
-                  src={weapon.imageSrc}
-                  alt={weapon.name}
-                  className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => {
-                    // Fallback visually if image file missing
-                    (e.target as HTMLElement).style.opacity = '0.4';
-                  }}
-                />
-                <span className="absolute top-3 right-3 text-[10px] font-mono px-2.5 py-1 bg-[#0B0C10]/90 text-white border border-[#2D2E3B] rounded-md uppercase tracking-wider font-bold">
-                  {weapon.type}
-                </span>
-                <span className="absolute bottom-3 left-3 text-[9px] font-mono px-2 py-0.5 bg-[#E51A1A]/20 text-[#E51A1A] rounded border border-[#E51A1A]/40 font-bold uppercase">
-                  Click for Blueprint
-                </span>
+        {/* Tactical Telemetry & Index Counter Bar */}
+        <div className="flex items-center justify-between font-mono text-xs text-[#888892] px-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#E51A1A] animate-pulse"></span>
+            <span className="text-white font-bold tracking-widest uppercase">
+              MODEL {String(activeIdx + 1).padStart(2, '0')} / {String(SPONSOR_WEAPONS.length).padStart(2, '0')}
+            </span>
+            <span className="text-[#555666]">|</span>
+            <span className="text-[#E51A1A] font-semibold">{currentWeapon.type}</span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5">
+            {SPONSOR_WEAPONS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveIdx(i)}
+                className={`h-1.5 transition-all rounded-full ${
+                  i === activeIdx ? 'w-8 bg-[#E51A1A]' : 'w-2 bg-[#2D2E3B] hover:bg-[#555666]'
+                }`}
+                title={`Go to model ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Gallery Interactive Viewport (Single Card Stack with Drag/Swipe Animation) */}
+        <div className="relative max-w-3xl mx-auto my-4">
+          {/* Background Card Preview (giving stacked 3D depth) */}
+          <div className="absolute inset-0 max-w-2xl mx-auto scale-[0.94] translate-y-4 bg-[#0E0F14] border border-[#222329] rounded-2xl opacity-40 blur-[0.5px] pointer-events-none hidden sm:block"></div>
+
+          {/* Active Front Card */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={() => {
+              if (isDragging) {
+                handleMouseUp();
+              }
+            }}
+            onClick={() => {
+              if (Math.abs(dragOffset) < 10) {
+                setSelectedWeapon(currentWeapon);
+              }
+            }}
+            style={{
+              transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)`,
+              transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)',
+            }}
+            className="relative bg-[#14151C] border border-[#282B3A] hover:border-[#DC2626] rounded-2xl overflow-hidden shadow-2xl cursor-pointer group transition-colors"
+          >
+            {/* Visual Header Strip */}
+            <div className="px-6 py-4 bg-[#0E0F14] border-b border-[#222329] flex items-center justify-between">
+              <span className="px-2.5 py-1 bg-[#E51A1A]/15 text-[#E51A1A] font-mono text-[10px] font-bold uppercase tracking-wider rounded">
+                {currentWeapon.sponsor.includes('Gandiva') ? 'GARE SERIES' : 'PRECIHOLE MATCH'}
+              </span>
+              <span className="font-mono text-xs text-[#888892] flex items-center gap-1.5">
+                <Maximize2 className="w-3.5 h-3.5 text-[#E51A1A]" />
+                <span className="hidden sm:inline">Click for Specs</span>
+              </span>
+            </div>
+
+            {/* High-Resolution Weapon Image Profile */}
+            <div className="h-64 sm:h-80 bg-[#090A0E] flex items-center justify-center p-6 relative overflow-hidden">
+              <img
+                src={currentWeapon.imageSrc}
+                alt={currentWeapon.name}
+                className="max-h-full max-w-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-500"
+              />
+
+              <div className="absolute top-4 left-4 font-mono text-[10px] text-[#666677] uppercase tracking-widest">
+                PRECISION TARGET ARCHITECTURE
               </div>
 
-              {/* Weapon Meta */}
-              <div className="p-5 space-y-3">
-                <div>
-                  <span className="text-[10px] font-mono text-[#888892] uppercase block tracking-wider">
-                    {weapon.sponsor}
-                  </span>
-                  <h4 className="text-xl font-bold text-white group-hover:text-[#E51A1A] transition-colors">
-                    {weapon.name}
-                  </h4>
-                  <p className="text-xs text-[#A0A2B0] mt-1">{weapon.subtitle}</p>
-                </div>
-
-                {/* Micro Specs */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#22232E] text-[11px] font-mono text-[#787A8A]">
-                  <div>
-                    <span className="block text-[9px] text-[#555666] uppercase">Caliber</span>
-                    <span className="text-white font-medium">{weapon.caliber.split(' ')[0]}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] text-[#555666] uppercase">Fill Pressure</span>
-                    <span className="text-white font-medium">{weapon.cylinderPressure.split(' ')[0]}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Footer Button */}
-              <div className="px-5 py-3 bg-[#111218] border-t border-[#22232E] flex items-center justify-between text-xs font-mono text-[#B0B2C0] group-hover:text-white">
-                <span>View Ballistic Specs</span>
-                <ChevronRight className="w-4 h-4 text-[#E51A1A] group-hover:translate-x-1 transition-transform" />
+              <div className="absolute bottom-3 right-4 px-3 py-1 bg-[#0B0C10]/90 border border-[#2D2E3B] text-[10px] font-mono text-[#E51A1A] font-bold uppercase tracking-wider rounded">
+                [ Click Card to Inspect ]
               </div>
             </div>
-          ))}
+
+            {/* Card Information Body */}
+            <div className="p-6 sm:p-8 space-y-4">
+              <div>
+                <span className="font-mono text-xs text-[#E51A1A] uppercase tracking-wider block font-bold">
+                  {currentWeapon.subtitle}
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-0.5 font-sans">
+                  {currentWeapon.name}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#888892] mt-1 leading-relaxed">
+                  {currentWeapon.description}
+                </p>
+              </div>
+
+              {/* Technical Specifications Matrix */}
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#222329] font-mono text-xs">
+                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
+                  <span className="block text-[9px] text-[#666675] uppercase">CALIBER</span>
+                  <span className="text-white font-bold">{currentWeapon.caliber.split(' ')[0]}</span>
+                </div>
+                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
+                  <span className="block text-[9px] text-[#666675] uppercase">VELOCITY</span>
+                  <span className="text-white font-bold">{currentWeapon.velocity.split(' ')[0]} m/s</span>
+                </div>
+                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
+                  <span className="block text-[9px] text-[#666675] uppercase">PRESSURE</span>
+                  <span className="text-white font-bold">{currentWeapon.cylinderPressure.split(' ')[0]} Bar</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Left & Right Tactical Slider Navigation Controls */}
+          <div className="flex items-center justify-between mt-6">
+            <button
+              onClick={handlePrev}
+              className="px-5 py-2.5 bg-[#14151C] hover:bg-[#E51A1A] border border-[#282B3A] text-white font-mono text-xs uppercase tracking-wider font-bold rounded-lg flex items-center gap-2 transition-all shadow-md group"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#E51A1A] group-hover:text-white" />
+              <span>Previous</span>
+            </button>
+
+            <span className="text-xs font-mono text-[#666675] hidden sm:block">
+              Drag or use arrow keys to navigate
+            </span>
+
+            <button
+              onClick={handleNext}
+              className="px-5 py-2.5 bg-[#14151C] hover:bg-[#E51A1A] border border-[#282B3A] text-white font-mono text-xs uppercase tracking-wider font-bold rounded-lg flex items-center gap-2 transition-all shadow-md group"
+            >
+              <span>Next</span>
+              <ChevronRight className="w-4 h-4 text-[#E51A1A] group-hover:text-white" />
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* POPUP MODAL: Interactive Weapon Details with CSS Animation */}
+      {/* DETAILED BLUEPRINT MODAL: Single Weapon Specifications (With ONLY Close Action) */}
       {selectedWeapon && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
           <div className="bg-[#12131A] border border-[#2D2E3B] text-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-6 relative overflow-hidden animate-scale-up">
-            {/* Red Accent Top Glow */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent"></div>
+            {/* Red Accent Top Strip */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent"></div>
 
             {/* Header with Close */}
             <div className="flex items-start justify-between gap-4 border-b border-[#22232E] pb-4">
@@ -445,7 +583,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
                 <span className="text-[10px] font-mono text-[#E51A1A] tracking-widest uppercase font-bold">
                   {selectedWeapon.sponsor}
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white mt-0.5">
+                <h3 className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-sans">
                   {selectedWeapon.name}
                 </h3>
                 <p className="text-xs font-mono text-[#8E909E]">{selectedWeapon.subtitle}</p>
@@ -454,9 +592,19 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               <button
                 onClick={() => setSelectedWeapon(null)}
                 className="p-2 text-[#787A8A] hover:text-white hover:bg-[#1E1F29] rounded-lg transition-colors"
+                title="Close Blueprint"
               >
                 <X className="w-6 h-6" />
               </button>
+            </div>
+
+            {/* High-res Modal Image */}
+            <div className="h-44 bg-[#090A0E] rounded-xl border border-[#22232E] flex items-center justify-center p-4">
+              <img
+                src={selectedWeapon.imageSrc}
+                alt={selectedWeapon.name}
+                className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+              />
             </div>
 
             {/* Description */}
@@ -492,10 +640,10 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               </div>
             </div>
 
-            {/* Features Bullet List */}
+            {/* Features List */}
             <div className="space-y-2">
               <span className="text-xs font-mono text-[#E51A1A] uppercase tracking-wider font-bold block">
-                Engineering Highlights
+                Engineering Specifications
               </span>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#9FA1B0]">
                 {selectedWeapon.features.map((feat, idx) => (
@@ -507,28 +655,17 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               </ul>
             </div>
 
-            {/* Modal Bottom CTA */}
-            <div className="pt-4 border-t border-[#22232E] flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs font-mono text-[#6E7080]">
-                Official competition arm approved by RSO.
+            {/* Modal Bottom: ONLY CLOSE BUTTON */}
+            <div className="pt-4 border-t border-[#22232E] flex items-center justify-between">
+              <span className="text-[11px] font-mono text-[#6E7080]">
+                Official competition arm approved by NCC Range Safety Officers.
               </span>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  onClick={() => setSelectedWeapon(null)}
-                  className="w-full sm:w-auto px-4 py-2 border border-[#3A3C4A] hover:bg-[#1E1F29] rounded-lg text-xs font-mono font-medium"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedWeapon(null);
-                    handleBookingCta();
-                  }}
-                  className="w-full sm:w-auto px-6 py-2 bg-[#E51A1A] hover:bg-[#C41515] text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider shadow"
-                >
-                  Book Slot with Weapon
-                </button>
-              </div>
+              <button
+                onClick={() => setSelectedWeapon(null)}
+                className="px-6 py-2.5 bg-[#1B1C24] hover:bg-[#E51A1A] hover:text-white border border-[#3A3C4A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold rounded-lg transition-all"
+              >
+                [ Close Data ]
+              </button>
             </div>
           </div>
         </div>
@@ -540,7 +677,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
           <div className="flex items-center gap-3 border-b border-[#22232E] pb-4">
             <ShieldCheck className="w-7 h-7 text-[#E51A1A]" />
             <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight font-sans">
                 Range Safety & Firing Rules
               </h3>
               <p className="text-xs font-mono text-[#8E909E]">
@@ -549,24 +686,23 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-[#9FA1B0] leading-relaxed">
-            <div className="space-y-2">
-              <h4 className="font-bold text-white font-mono text-sm">1. Pass Verification</h4>
-              <p>
-                Present your digital pass QR code at the range registration desk 15 minutes prior to your scheduled slot. Only verified candidates are admitted to the firing firing bays.
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-mono text-[#A0A2B0]">
+            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
+              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 01</span>
+              <p className="text-white font-semibold">Muzzle Discipline</p>
+              <p className="text-[11px] text-[#7C7E8E]">All barrels must remain downrange towards the electronic targets at all times.</p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-bold text-white font-mono text-sm">2. Safe Barrel Protocol</h4>
-              <p>
-                Rifles and pistols must be pointed down-range towards the stop butts at all times. Actions remain open until the Range Officer commands "LOAD" and "COMMENCE FIRING".
-              </p>
+
+            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
+              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 02</span>
+              <p className="text-white font-semibold">Trigger Finger Safety</p>
+              <p className="text-[11px] text-[#7C7E8E]">Finger remains outside the trigger guard until the Chief Range Officer calls "COMMENCE FIRING".</p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-bold text-white font-mono text-sm">3. Certified Scoring</h4>
-              <p>
-                Target scorecards are marked by range adjudicators immediately following each 10-shot round. Scores and tie-breaker tens sync directly to the live broadcast leaderboard.
-              </p>
+
+            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
+              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 03</span>
+              <p className="text-white font-semibold">Live Pellet Handling</p>
+              <p className="text-[11px] text-[#7C7E8E]">Match grade .177 pellets are issued on the firing lane. Unauthorized pellets are strictly forbidden.</p>
             </div>
           </div>
         </div>

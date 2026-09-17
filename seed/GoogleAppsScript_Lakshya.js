@@ -8,8 +8,11 @@
  * 2. Click "Responses" tab -> "View in Sheets" (or open the linked Google Sheet).
  * 3. In the Google Sheet top menu, click: Extensions -> Apps Script.
  * 4. Erase any code inside Code.gs and PASTE THIS ENTIRE SCRIPT.
- * 5. Update the CONFIG block below with your FIREBASE_PROJECT_ID and FIREBASE_API_KEY.
- * 6. Click the Disk icon (Save), then run `testSubmission()` once to grant permissions.
+ * 5. Update the CONFIG block below:
+ *    - PROJECT_ID & API_KEY (already filled)
+ *    - ADMIN_EMAIL: Use one of your designated admin emails (e.g., nccrvce2025@gmail.com)
+ *    - ADMIN_PASSWORD: Set a password for this admin email in Firebase Console -> Authentication -> Users.
+ * 6. Click the Disk icon (Save), then run `testSubmission()` once to test and grant permissions.
  * 7. In the left sidebar of Apps Script, click "Triggers" (alarm clock icon) -> "Add Trigger":
  *    - Choose which function to run: `onFormSubmit`
  *    - Which runs at deployment: `Head`
@@ -18,11 +21,12 @@
  *    - Failure notification settings: `Notify me immediately`
  *    - Click Save!
  * 
- * Now, every new registration is automatically pushed to Firestore within 2 seconds!
+ * Now, every new Google Form registration is automatically authenticated and pushed 
+ * to Firestore within 2 seconds!
  */
 
 const CONFIG = {
-  // Your Firebase project ID (e.g., "shaurya-lakshya-event")
+  // Your Firebase project ID
   PROJECT_ID: "shaurya-lakshya-event",
   
   // App ID namespace used in Firestore path: artifacts/{APP_ID}/public/data/registrations/{EMAIL}
@@ -30,6 +34,19 @@ const CONFIG = {
   
   // Web API Key from Firebase Console -> Project Settings
   API_KEY: "AIzaSyD8eRxPpVUOiU6pV0u3_I6pCFfOaw5UeaA",
+
+  // ============================================================================
+  // ADMIN AUTHENTICATION (Fixes 403 PERMISSION_DENIED)
+  // Firestore rules require requests to be authenticated by an authorized admin.
+  // Setup (1 minute in Firebase Console):
+  // 1. Go to Firebase Console -> Build -> Authentication -> "Sign-in method" tab.
+  // 2. Enable "Email/Password" provider.
+  // 3. Go to "Users" tab -> Click "Add user".
+  // 4. Enter ADMIN_EMAIL and create an ADMIN_PASSWORD.
+  // 5. Enter the matching email & password below:
+  // ============================================================================
+  ADMIN_EMAIL: "nccrvce2025@gmail.com",
+  ADMIN_PASSWORD: "YOUR_ADMIN_PASSWORD_HERE",
   
   // Google Form Column Mapping (1-based index matching your Sheet columns):
   // [1] Timestamp, [2] Email Address, [3] Name, [4] RVCE Email ID, [5] Date of Birth, [6] Phone Number, [7] USN, [8] Branch, [9] Year of Study
@@ -43,6 +60,56 @@ const CONFIG = {
   COL_BRANCH: 8,
   COL_YEAR: 9
 };
+
+/**
+ * Retrieves a valid Firebase Auth ID Token for the Admin account via Firebase Identity Toolkit REST API.
+ * Caches the token for 50 minutes (3000s) to avoid repetitive login calls.
+ */
+function getFirebaseAuthToken() {
+  const cache = CacheService.getScriptCache();
+  const cachedToken = cache.get("firebase_admin_id_token");
+  if (cachedToken) {
+    return cachedToken;
+  }
+
+  if (!CONFIG.ADMIN_PASSWORD || CONFIG.ADMIN_PASSWORD === "YOUR_ADMIN_PASSWORD_HERE") {
+    throw new Error(
+      "ADMIN_PASSWORD is not set in CONFIG. Please set an admin password in Firebase Console -> Authentication -> Users, " +
+      "then update ADMIN_PASSWORD in this script."
+    );
+  }
+
+  const authUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${CONFIG.API_KEY}`;
+  const payload = JSON.stringify({
+    email: CONFIG.ADMIN_EMAIL,
+    password: CONFIG.ADMIN_PASSWORD,
+    returnSecureToken: true
+  });
+
+  const response = UrlFetchApp.fetch(authUrl, {
+    method: "post",
+    contentType: "application/json",
+    payload: payload,
+    muteHttpExceptions: true
+  });
+
+  const responseCode = response.getResponseCode();
+  const resJson = JSON.parse(response.getContentText());
+
+  if (responseCode !== 200) {
+    const errorMsg = resJson.error ? resJson.error.message : response.getContentText();
+    throw new Error(
+      `Firebase Auth failed (${responseCode}): ${errorMsg}. ` +
+      `Ensure Email/Password provider is enabled in Firebase Console -> Authentication -> Sign-in method, ` +
+      `and user '${CONFIG.ADMIN_EMAIL}' exists under Users tab.`
+    );
+  }
+
+  const idToken = resJson.idToken;
+  // Cache for 50 minutes (tokens expire in 60 minutes)
+  cache.put("firebase_admin_id_token", idToken, 3000);
+  return idToken;
+}
 
 /**
  * Triggered automatically whenever a new Google Form response is submitted
@@ -116,11 +183,11 @@ function onFormSubmit(e) {
 }
 
 /**
- * Uploads or merges a single registration document into Firestore via REST API
+ * Uploads or merges a single registration document into Firestore via REST API with Admin Bearer authentication
  */
 function uploadToFirestore(docId, data) {
   const cleanId = docId.toLowerCase().trim();
-  const url = `https://firestore.googleapis.com/v1/projects/${CONFIG.PROJECT_ID}/databases/(default)/documents/artifacts/${CONFIG.APP_ID}/public/data/registrations/${encodeURIComponent(cleanId)}?key=${CONFIG.API_KEY}`;
+  const url = `https://firestore.googleapis.com/v1/projects/${CONFIG.PROJECT_ID}/databases/(default)/documents/artifacts/${CONFIG.APP_ID}/public/data/registrations/${encodeURIComponent(cleanId)}`;
 
   const nowIso = new Date().toISOString();
 
@@ -144,9 +211,15 @@ function uploadToFirestore(docId, data) {
 
   const payload = JSON.stringify({ fields: fields });
 
+  // Get Admin Bearer token to authorize write against firestore.rules
+  const idToken = getFirebaseAuthToken();
+
   const options = {
     method: "patch",
     contentType: "application/json",
+    headers: {
+      "Authorization": "Bearer " + idToken
+    },
     payload: payload,
     muteHttpExceptions: true
   };
@@ -155,6 +228,9 @@ function uploadToFirestore(docId, data) {
   const code = response.getResponseCode();
   if (code !== 200) {
     Logger.log(`Firestore API Error (${code}) for ${cleanId}: ${response.getContentText()}`);
+    throw new Error(`Firestore API Error (${code}): ${response.getContentText()}`);
+  } else {
+    Logger.log(`[Firestore Success] Saved registration for: ${cleanId}`);
   }
 }
 
