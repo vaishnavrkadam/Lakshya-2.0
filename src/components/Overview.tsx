@@ -572,18 +572,24 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
 
       {/* DETAILED BLUEPRINT MODAL: Single Weapon Specifications (With ONLY Close Action) */}
       {selectedWeapon && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#12131A] border border-[#2D2E3B] text-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-6 relative overflow-hidden animate-scale-up">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+          onClick={() => setSelectedWeapon(null)}
+        >
+          <div 
+            className="bg-[#12131A] border border-[#2D2E3B] text-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col relative overflow-hidden animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Red Accent Top Strip */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent"></div>
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent z-10"></div>
 
-            {/* Header with Close */}
-            <div className="flex items-start justify-between gap-4 border-b border-[#22232E] pb-4">
+            {/* Pinned Sticky Header with Close Button */}
+            <div className="shrink-0 px-6 py-4 sm:px-8 sm:py-5 border-b border-[#22232E] flex items-start justify-between gap-4 bg-[#12131A] z-10">
               <div>
                 <span className="text-[10px] font-mono text-[#E51A1A] tracking-widest uppercase font-bold">
                   {selectedWeapon.sponsor}
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white mt-0.5 font-sans">
+                <h3 className="text-xl sm:text-2xl font-black text-white mt-0.5 font-sans">
                   {selectedWeapon.name}
                 </h3>
                 <p className="text-xs font-mono text-[#8E909E]">{selectedWeapon.subtitle}</p>
@@ -591,78 +597,81 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
 
               <button
                 onClick={() => setSelectedWeapon(null)}
-                className="p-2 text-[#787A8A] hover:text-white hover:bg-[#1E1F29] rounded-lg transition-colors"
+                className="p-2 text-[#888A98] hover:text-white hover:bg-[#1E1F29] rounded-lg transition-colors border border-transparent hover:border-[#333544]"
                 title="Close Blueprint"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
-            {/* High-res Modal Image */}
-            <div className="h-44 bg-[#090A0E] rounded-xl border border-[#22232E] flex items-center justify-center p-4">
-              <img
-                src={selectedWeapon.imageSrc}
-                alt={selectedWeapon.name}
-                className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
-              />
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+              {/* High-res Modal Image */}
+              <div className="h-44 sm:h-52 bg-[#090A0E] rounded-xl border border-[#22232E] flex items-center justify-center p-4">
+                <img
+                  src={selectedWeapon.imageSrc}
+                  alt={selectedWeapon.name}
+                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+                />
+              </div>
+
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-[#B0B2C0] leading-relaxed">
+                {selectedWeapon.description}
+              </p>
+
+              {/* Technical Ballistics Matrix */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E] text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Caliber</span>
+                  <span className="font-semibold text-white">{selectedWeapon.caliber}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Muzzle Velocity</span>
+                  <span className="font-semibold text-white">{selectedWeapon.velocity}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Working Pressure</span>
+                  <span className="font-semibold text-white">{selectedWeapon.cylinderPressure}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Barrel Length</span>
+                  <span className="font-semibold text-white">{selectedWeapon.barrelLength}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Total Weight</span>
+                  <span className="font-semibold text-white">{selectedWeapon.weight}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#666675] uppercase block">Match Trigger</span>
+                  <span className="font-semibold text-white">{selectedWeapon.trigger}</span>
+                </div>
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-2">
+                <span className="text-xs font-mono text-[#E51A1A] uppercase tracking-wider font-bold block">
+                  Engineering Specifications
+                </span>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#9FA1B0]">
+                  {selectedWeapon.features.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-[#E51A1A] font-bold">✓</span>
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            {/* Description */}
-            <p className="text-xs sm:text-sm text-[#B0B2C0] leading-relaxed">
-              {selectedWeapon.description}
-            </p>
-
-            {/* Technical Ballistics Matrix */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E] text-xs font-mono">
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Caliber</span>
-                <span className="font-semibold text-white">{selectedWeapon.caliber}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Muzzle Velocity</span>
-                <span className="font-semibold text-white">{selectedWeapon.velocity}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Working Pressure</span>
-                <span className="font-semibold text-white">{selectedWeapon.cylinderPressure}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Barrel Length</span>
-                <span className="font-semibold text-white">{selectedWeapon.barrelLength}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Total Weight</span>
-                <span className="font-semibold text-white">{selectedWeapon.weight}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-[#666675] uppercase block">Match Trigger</span>
-                <span className="font-semibold text-white">{selectedWeapon.trigger}</span>
-              </div>
-            </div>
-
-            {/* Features List */}
-            <div className="space-y-2">
-              <span className="text-xs font-mono text-[#E51A1A] uppercase tracking-wider font-bold block">
-                Engineering Specifications
-              </span>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#9FA1B0]">
-                {selectedWeapon.features.map((feat, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-[#E51A1A] font-bold">✓</span>
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Modal Bottom: ONLY CLOSE BUTTON */}
-            <div className="pt-4 border-t border-[#22232E] flex items-center justify-between">
-              <span className="text-[11px] font-mono text-[#6E7080]">
+            {/* Pinned Sticky Bottom: ALWAYS VISIBLE CLOSE BUTTON */}
+            <div className="shrink-0 px-6 py-4 sm:px-8 border-t border-[#22232E] flex items-center justify-between bg-[#0E0F15] z-10">
+              <span className="text-[11px] font-mono text-[#6E7080] hidden sm:inline">
                 Official competition arm approved by NCC Range Safety Officers.
               </span>
               <button
                 onClick={() => setSelectedWeapon(null)}
-                className="px-6 py-2.5 bg-[#1B1C24] hover:bg-[#E51A1A] hover:text-white border border-[#3A3C4A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold rounded-lg transition-all"
+                className="w-full sm:w-auto px-6 py-2.5 bg-[#1B1C24] hover:bg-[#E51A1A] hover:text-white border border-[#3A3C4A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold rounded-lg transition-all text-center"
               >
                 [ Close Data ]
               </button>

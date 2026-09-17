@@ -26,26 +26,26 @@
  */
 
 const CONFIG = {
-  // Your Firebase project ID
-  PROJECT_ID: "shaurya-lakshya-event",
+  // Your Firebase project ID (Active Firebase project: lakshya-02)
+  PROJECT_ID: "lakshya-02",
   
   // App ID namespace used in Firestore path: artifacts/{APP_ID}/public/data/registrations/{EMAIL}
-  APP_ID: "shaurya-lakshya-event",
+  APP_ID: "lakshya-02",
   
-  // Web API Key from Firebase Console -> Project Settings
-  API_KEY: "AIzaSyD8eRxPpVUOiU6pV0u3_I6pCFfOaw5UeaA",
+  // Web API Key for lakshya-02
+  API_KEY: "AIzaSyALWZz6wR6WI34lp6APtMnk05g9jEdIylY",
 
   // ============================================================================
   // ADMIN AUTHENTICATION (Fixes 403 PERMISSION_DENIED)
   // Firestore rules require requests to be authenticated by an authorized admin.
-  // Setup (1 minute in Firebase Console):
-  // 1. Go to Firebase Console -> Build -> Authentication -> "Sign-in method" tab.
+  // Setup (1 minute in Firebase Console -> lakshya-02):
+  // 1. Go to Firebase Console (lakshya-02) -> Build -> Authentication -> "Sign-in method".
   // 2. Enable "Email/Password" provider.
   // 3. Go to "Users" tab -> Click "Add user".
-  // 4. Enter ADMIN_EMAIL and create an ADMIN_PASSWORD.
+  // 4. Enter your admin email (e.g. vaishnavkadam57@gmail.com or nccrvce2025@gmail.com) and create an ADMIN_PASSWORD.
   // 5. Enter the matching email & password below:
   // ============================================================================
-  ADMIN_EMAIL: "nccrvce2025@gmail.com",
+  ADMIN_EMAIL: "vaishnavkadam57@gmail.com",
   ADMIN_PASSWORD: "YOUR_ADMIN_PASSWORD_HERE",
   
   // Google Form Column Mapping (1-based index matching your Sheet columns):
