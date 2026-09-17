@@ -41,8 +41,22 @@ export function computeRankedLeaderboard(
   const scoredActive: LeaderboardEntry[] = [];
   const pendingOrDQ: LeaderboardEntry[] = [];
 
-  for (const entry of verticalEntries) {
-    if (entry.isDQ || entry.score === null || entry.scoreStatus === 'pending') {
+  for (const rawEntry of verticalEntries) {
+    const rawScore = (rawEntry as any).score ?? (rawEntry as any).totalScore ?? null;
+    const scoreNum = (rawScore !== null && rawScore !== undefined && !isNaN(Number(rawScore))) 
+      ? Number(rawScore) 
+      : null;
+    const isDQ = Boolean(rawEntry.isDQ || (rawEntry as any).disqualified);
+    const isPending = !rawEntry.scoreStatus || rawEntry.scoreStatus === 'pending' || scoreNum === null;
+
+    const entry: LeaderboardEntry = {
+      ...rawEntry,
+      score: scoreNum,
+      isDQ,
+      scoreStatus: (rawEntry.scoreStatus || (scoreNum !== null ? 'published' : 'pending')) as any,
+    };
+
+    if (isDQ || isPending) {
       pendingOrDQ.push(entry);
     } else {
       scoredActive.push(entry);

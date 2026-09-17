@@ -83,6 +83,7 @@ export function generateSlotRostersPdf(
 
 /**
  * Generates and downloads the Registered But Not Booked PDF
+ * Contains strictly: Serial Number (S.No) and Shooter Name
  */
 export function generateUnbookedRegistrationsPdf(
   registrations: Registration[],
@@ -93,13 +94,13 @@ export function generateUnbookedRegistrationsPdf(
   const now = new Date().toLocaleString();
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('LAKSHYA 2.0 — Registered but Not Booked', 14, 20);
+  doc.setFontSize(16);
+  doc.text('LAKSHYA 2.0 — Unbooked Shooters Roster', 14, 18);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`Generated on: ${now}`, 14, 27);
-  doc.text(`Vertical Filter: ${verticalFilter}`, 14, 32);
+  doc.setFontSize(9);
+  doc.text(`Generated on: ${now} | Filter: ${verticalFilter === 'all' ? 'All Verticals' : verticalFilter}`, 14, 25);
+  doc.text('Organizer: NCC RVCE × GARE', 14, 30);
 
   // Determine unbooked
   const activeBookings = bookings.filter((b) => b.status === 'confirmed');
@@ -111,55 +112,67 @@ export function generateUnbookedRegistrationsPdf(
   );
 
   const unbookedRows: string[][] = [];
+  const seenKeys = new Set<string>();
 
   for (const reg of registrations) {
     const email = reg.email.toLowerCase();
-    const hasRifle = rifleBookedEmails.has(email);
-    const hasPistol = pistolBookedEmails.has(email);
+    const rvceEmail = (reg.rvceEmail || '').toLowerCase();
+    const hasRifle = rifleBookedEmails.has(email) || (rvceEmail && rifleBookedEmails.has(rvceEmail));
+    const hasPistol = pistolBookedEmails.has(email) || (rvceEmail && pistolBookedEmails.has(rvceEmail));
 
     let isUnbooked = false;
-    let statusNote = '';
 
     if (verticalFilter === 'all') {
-      if (!hasRifle && !hasPistol) {
-        isUnbooked = true;
-        statusNote = 'No bookings in either vertical';
-      }
+      if (!hasRifle && !hasPistol) isUnbooked = true;
     } else if (verticalFilter === 'Air Rifle') {
-      if (!hasRifle) {
-        isUnbooked = true;
-        statusNote = hasPistol ? 'Has Pistol, missing Rifle' : 'No Rifle';
-      }
+      if (!hasRifle) isUnbooked = true;
     } else if (verticalFilter === 'Air Pistol') {
-      if (!hasPistol) {
-        isUnbooked = true;
-        statusNote = hasRifle ? 'Has Rifle, missing Pistol' : 'No Pistol';
-      }
+      if (!hasPistol) isUnbooked = true;
     }
 
     if (isUnbooked) {
-      unbookedRows.push([
-        (unbookedRows.length + 1).toString(),
-        reg.name,
-        reg.email,
-        reg.gender || '-',
-        reg.source || 'intake',
-        statusNote,
-      ]);
+      const cleanName = (reg.name || 'Shooter').trim();
+      const dedupeKey = (reg.usn && reg.usn.length > 3) ? `usn_${reg.usn.toUpperCase()}` : `em_${email}`;
+      if (!seenKeys.has(dedupeKey)) {
+        seenKeys.add(dedupeKey);
+        unbookedRows.push([
+          '',
+          cleanName
+        ]);
+      }
     }
   }
 
+  // Sort alphabetically by name
+  unbookedRows.sort((a, b) => a[1].localeCompare(b[1]));
+  // Re-index S.No after sorting
+  unbookedRows.forEach((row, idx) => {
+    row[0] = (idx + 1).toString();
+  });
+
   autoTable(doc, {
-    startY: 40,
-    head: [['#', 'Participant Name', 'Email', 'Gender', 'Source', 'Unbooked Status']],
+    startY: 36,
+    head: [['S.No', 'Shooter Name']],
     body: unbookedRows,
-    theme: 'grid',
-    headStyles: { fillColor: [180, 80, 40] },
-    styles: { fontSize: 8 },
+    theme: 'striped',
+    headStyles: { 
+      fillColor: [30, 30, 36],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 10
+    },
+    styles: { 
+      fontSize: 9,
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 25, halign: 'center' },
+      1: { cellWidth: 'auto' }
+    },
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`lakshya-unbooked-participants-${Date.now()}.pdf`);
+  doc.save(`lakshya-unbooked-shooters-${Date.now()}.pdf`);
 }
 
 /**

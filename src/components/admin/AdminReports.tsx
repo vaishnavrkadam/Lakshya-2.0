@@ -209,7 +209,7 @@ export default function AdminReports({ slots, bookings, registrations }: AdminRe
             <div>
               <h3 className="font-serif text-lg font-bold text-[#171717]">Unbooked Shooters PDF</h3>
               <p className="text-xs text-[#6F6A61] leading-relaxed mt-1">
-                List of verified intake registrations who have not yet selected a firing slot for the competition.
+                Official alphabetical list of unbooked shooters containing strictly Serial Number and Name.
               </p>
             </div>
 

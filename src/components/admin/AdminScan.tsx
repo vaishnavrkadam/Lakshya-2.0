@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Html5Qrcode, type CameraDevice } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats, type CameraDevice } from 'html5-qrcode';
 import { parseQrPayload } from '../../lib/bookingPayload';
 import { getDocRef, runTransaction, serverTimestamp } from '../../lib/firebase';
 import type { Booking, LakshyaQrPayload } from '../../types/lakshya';
@@ -77,16 +77,28 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         scannerRef.current = null;
       }
 
-      const html5QrCode = new Html5Qrcode('qr-reader-target');
+      const html5QrCode = new Html5Qrcode('qr-reader-target', {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        verbose: false,
+      });
       scannerRef.current = html5QrCode;
 
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
+      const config: any = {
+        fps: 20,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const edge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(edge * 0.9);
+          return { width: Math.max(size, 200), height: Math.max(size, 200) };
+        },
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
       };
 
       const onSuccess = (decodedText: string) => {
+        try {
+          if (navigator.vibrate) navigator.vibrate(100);
+        } catch (_) {}
         handleScannedText(decodedText);
         stopScanner();
       };
