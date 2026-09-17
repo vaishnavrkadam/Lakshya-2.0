@@ -43,7 +43,7 @@ export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-export const APP_ID = (import.meta as any).env?.VITE_FIREBASE_APP_ID_PATH || 'lakshya-02';
+export const APP_ID = (import.meta as any).env?.VITE_FIREBASE_APP_ID_PATH || '1:205566133235:web:691e34c3cd87d984980886';
 
 // Helper to get collection path under artifacts namespace
 export function getCollectionPath(collectionName: string): string {

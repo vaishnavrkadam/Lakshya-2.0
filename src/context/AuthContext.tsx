@@ -9,7 +9,11 @@ import {
   getColRef,
   query,
   where,
-  onSnapshot
+  onSnapshot,
+  doc,
+  getDoc,
+  db,
+  APP_ID
 } from '../lib/firebase';
 import { normalizeEmail, isAdminEmail } from '../config/lakshya';
 
@@ -27,7 +31,7 @@ export function AuthProvider({ children }) {
     let unsubscribeBookings = null;
     let unsubscribeRegistration = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
         const cleanEmail = normalizeEmail(user.email);
         setCurrentUser(user);
@@ -35,16 +39,32 @@ export function AuthProvider({ children }) {
 
         // Realtime listener for registration status
         const regRef = getDocRef('registrations', cleanEmail);
-        unsubscribeRegistration = onSnapshot(regRef, (docSnap) => {
+        unsubscribeRegistration = onSnapshot(regRef, async (docSnap) => {
           if (docSnap.exists()) {
             setRegistration({ id: docSnap.id, ...docSnap.data() });
             setOnboardingOpen(false);
+            setLoading(false);
           } else {
+            // Check alternate path as fallback (handles both web app ID and lakshya-02)
+            try {
+              const altAppId = APP_ID === 'lakshya-02' 
+                ? '1:205566133235:web:691e34c3cd87d984980886' 
+                : 'lakshya-02';
+              const altDocRef = doc(db, `artifacts/${altAppId}/public/data/registrations`, cleanEmail);
+              const altSnap = await getDoc(altDocRef);
+              if (altSnap.exists()) {
+                setRegistration({ id: altSnap.id, ...altSnap.data() });
+                setOnboardingOpen(false);
+                setLoading(false);
+                return;
+              }
+            } catch (_) {}
+
             setRegistration(null);
             // If logged in but not in registrations, trigger onboarding dialog
             setOnboardingOpen(true);
+            setLoading(false);
           }
-          setLoading(false);
         }, (error) => {
           console.error("Error fetching registration:", error);
           setLoading(false);
