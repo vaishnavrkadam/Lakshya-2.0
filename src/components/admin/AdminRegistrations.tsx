@@ -14,8 +14,10 @@ import {
   Filter, 
   Download,
   AlertCircle,
-  GraduationCap
+  GraduationCap,
+  Award
 } from 'lucide-react';
+import { downloadCertificatePdf } from '../../lib/certificates';
 
 interface AdminRegistrationsProps {
   registrations: Registration[];
@@ -454,12 +456,23 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => handleToggleEligibility(reg)}
-                          className="text-[11px] text-[#64748B] hover:text-[#DC2626] underline uppercase tracking-wider"
-                        >
-                          {reg.eligible ? 'Lock' : 'Authorize'}
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => downloadCertificatePdf(reg.name)}
+                            title={`Download Certificate for ${reg.name}`}
+                            className="p-1.5 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#DC2626] rounded transition-colors inline-flex items-center gap-1 text-[11px] font-mono"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Cert</span>
+                          </button>
+                          <button
+                            onClick={() => handleToggleEligibility(reg)}
+                            className="text-[11px] text-[#64748B] hover:text-[#DC2626] underline uppercase tracking-wider"
+                          >
+                            {reg.eligible ? 'Lock' : 'Authorize'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

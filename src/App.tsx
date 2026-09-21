@@ -14,6 +14,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import AdminAllocations from './components/admin/AdminAllocations';
 import AdminSlots from './components/admin/AdminSlots';
 import AdminRegistrations from './components/admin/AdminRegistrations';
+import AdminCertificates from './components/admin/AdminCertificates';
 import AdminScan from './components/admin/AdminScan';
 import AdminLeaderboard from './components/admin/AdminLeaderboard';
 import AdminReports from './components/admin/AdminReports';
@@ -117,6 +118,9 @@ function MainApp() {
             )}
             {adminTab === 'registrations' && (
               <AdminRegistrations registrations={registrations} bookings={bookings} />
+            )}
+            {adminTab === 'certificates' && (
+              <AdminCertificates registrations={registrations} bookings={bookings} />
             )}
             {adminTab === 'scan' && (
               <AdminScan bookings={bookings} />

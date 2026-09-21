@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { buildQrPayload, encodeQrPayload } from '../lib/bookingPayload';
@@ -12,12 +12,15 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Award,
-  AlertCircle 
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import type { Booking } from '../types/lakshya';
+import { downloadCertificatePdf } from '../lib/certificates';
 
 export default function DigitalPass({ setView }: { setView: (v: string) => void }) {
   const { currentUser, userBookings, registration, loginWithGoogle } = useAuth();
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
 
   const confirmedBookings = userBookings.filter((b) => b.status === 'confirmed');
   const hasRifle = confirmedBookings.some((b) => b.vertical === 'Air Rifle');
@@ -88,11 +91,40 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
 
         <div className="flex items-center gap-3 no-print">
           <button
+            onClick={async () => {
+              if (isDownloadingCert) return;
+              const name = registration?.name || currentUser?.displayName || 'Competitor';
+              try {
+                setIsDownloadingCert(true);
+                await downloadCertificatePdf(name);
+              } catch (e: any) {
+                alert('Failed to download certificate: ' + (e.message || e));
+              } finally {
+                setIsDownloadingCert(false);
+              }
+            }}
+            disabled={isDownloadingCert}
+            className="px-4 py-2 border border-[#DC2626] bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors font-semibold shadow-sm"
+          >
+            {isDownloadingCert ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Generating Certificate...</span>
+              </>
+            ) : (
+              <>
+                <Award className="w-4 h-4 text-[#F8FAFC]" />
+                <span>[ Download Certificate ]</span>
+              </>
+            )}
+          </button>
+
+          <button
             onClick={handlePrint}
             className="px-4 py-2 border border-[#282B3A] bg-[#12131A] hover:bg-[#1A1C26] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors"
           >
             <Printer className="w-4 h-4 text-[#DC2626]" />
-            <span>[ Print / Save PDF ]</span>
+            <span>[ Print / Save Pass ]</span>
           </button>
         </div>
       </div>

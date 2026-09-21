@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   User, 
@@ -12,12 +12,42 @@ import {
   ExternalLink,
   PlusCircle,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Award,
+  Download,
+  Eye,
+  Loader2,
+  X
 } from 'lucide-react';
 import { REGISTRATION_FORM_URL } from '../config/lakshya';
+import { downloadCertificatePdf, renderCertificateToCanvas, sanitizeCertificateFilename } from '../lib/certificates';
+import { getSavedCertificateConfig } from '../config/certificateConfig';
 
 export default function Profile({ setView }: { setView: (v: string) => void }) {
   const { currentUser, registration, userBookings, logout, loginWithGoogle, setOnboardingOpen } = useAuth();
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [showCertPreview, setShowCertPreview] = useState(false);
+  const certCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (showCertPreview && certCanvasRef.current) {
+      const name = registration?.name || currentUser?.displayName || 'Competitor';
+      renderCertificateToCanvas(name, getSavedCertificateConfig(), certCanvasRef.current).catch(console.error);
+    }
+  }, [showCertPreview, registration, currentUser]);
+
+  const handleDownloadCert = async () => {
+    if (isDownloadingCert) return;
+    const participantName = registration?.name || currentUser?.displayName || 'Competitor';
+    try {
+      setIsDownloadingCert(true);
+      await downloadCertificatePdf(participantName);
+    } catch (err: any) {
+      alert('Failed to generate certificate PDF: ' + (err.message || err));
+    } finally {
+      setIsDownloadingCert(false);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -252,6 +282,126 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
           </div>
         </div>
       </div>
+
+      {/* Official Participation Certificate Section */}
+      <div className="bg-[#12131A] border border-[#282B3A] p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#282B3A] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-[#1A1C26] border border-[#DC2626] text-[#DC2626] rounded">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[#DC2626] block font-bold">
+                OFFICIAL RECOGNITION DOSSIER
+              </span>
+              <h3 className="font-headline-sm text-xl text-[#F8FAFC] uppercase font-serif">
+                Participation Certificate
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setShowCertPreview(true)}
+              className="px-3.5 py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors"
+            >
+              <Eye className="w-3.5 h-3.5 text-[#64748B]" />
+              <span>Preview</span>
+            </button>
+
+            <button
+              onClick={handleDownloadCert}
+              disabled={isDownloadingCert}
+              className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 transition-colors shadow-sm"
+            >
+              {isDownloadingCert ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between text-xs font-mono text-[#64748B] gap-2 pt-1">
+          <p>
+            Awarded in recognition for participation in LAKSHYA 2.0 organized by NCC RVCE × GARE.
+            Issued to:{' '}
+            <strong className="text-[#F8FAFC]">
+              {registration?.name || currentUser?.displayName || 'Competitor'}
+            </strong>
+          </p>
+          <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> Ready for Print Download
+          </span>
+        </div>
+      </div>
+
+      {/* Certificate Live Preview Modal */}
+      {showCertPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#12131A] border border-[#282B3A] rounded-xl max-w-4xl w-full p-5 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-[#282B3A] pb-3">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-[#DC2626]" />
+                <h3 className="font-mono text-xs uppercase font-bold text-[#F8FAFC]">
+                  Certificate Preview — {registration?.name || currentUser?.displayName || 'Competitor'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCertPreview(false)}
+                className="p-1 text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#1A1C26] rounded transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative w-full aspect-[1024/723] bg-[#0B0C10] border border-[#282B3A] rounded overflow-hidden shadow-inner flex items-center justify-center">
+              <canvas
+                ref={certCanvasRef}
+                className="w-full h-full object-contain block"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-[#282B3A]">
+              <span className="font-mono text-[11px] text-[#64748B]">
+                High-Resolution Print Quality (A4 Landscape · 300 DPI)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowCertPreview(false)}
+                  className="px-3.5 py-1.5 font-mono text-xs text-[#64748B] hover:text-[#F8FAFC]"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleDownloadCert}
+                  disabled={isDownloadingCert}
+                  className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                >
+                  {isDownloadingCert ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Generating PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download PDF</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
