@@ -42,39 +42,23 @@ function MainApp() {
     }, console.error);
 
     // If admin, also listen to all registrations and all bookings for reports & dashboards
-    let unsubRegsPrimary: (() => void) | null = null;
-    let unsubRegsFallback: (() => void) | null = null;
+    let unsubRegs: (() => void) | null = null;
     let unsubBookings: (() => void) | null = null;
 
     if (isAdmin) {
-      // Use map to seamlessly merge registrations from both web app ID path and clean lakshya-02 path
-      const regsMap = new Map<string, Registration>();
-      const syncRegs = () => setRegistrations(Array.from(regsMap.values()));
-
-      // 1. Primary path (based on APP_ID)
+      // Direct real-time listener to canonical registrations collection (no stale caching)
       const primaryRegsCol = getColRef('registrations');
-      unsubRegsPrimary = onSnapshot(primaryRegsCol, (snapshot) => {
-        snapshot.docs.forEach((d) => {
+      unsubRegs = onSnapshot(primaryRegsCol, (snapshot) => {
+        const items: Registration[] = snapshot.docs.map((d) => {
           const data = d.data() as any;
-          regsMap.set(d.id.toLowerCase(), { id: d.id, email: data.email || d.id, ...data });
+          return {
+            id: d.id,
+            email: data.email || d.id,
+            ...data,
+          };
         });
-        syncRegs();
+        setRegistrations(items);
       }, console.error);
-
-      // 2. Fallback alternate path
-      const altAppId = APP_ID === 'lakshya-02' 
-        ? '1:205566133235:web:691e34c3cd87d984980886' 
-        : 'lakshya-02';
-      const altRegsCol = collection(db, `artifacts/${altAppId}/public/data/registrations`);
-      unsubRegsFallback = onSnapshot(altRegsCol, (snapshot) => {
-        snapshot.docs.forEach((d) => {
-          const data = d.data() as any;
-          regsMap.set(d.id.toLowerCase(), { id: d.id, email: data.email || d.id, ...data });
-        });
-        syncRegs();
-      }, () => {
-        // Alt collection might be empty/unused; ignore errors
-      });
 
       const bookingsCol = getColRef('bookings');
       unsubBookings = onSnapshot(bookingsCol, (snapshot) => {
@@ -85,8 +69,7 @@ function MainApp() {
 
     return () => {
       unsubSlots();
-      if (unsubRegsPrimary) unsubRegsPrimary();
-      if (unsubRegsFallback) unsubRegsFallback();
+      if (unsubRegs) unsubRegs();
       if (unsubBookings) unsubBookings();
     };
   }, [isAdmin]);

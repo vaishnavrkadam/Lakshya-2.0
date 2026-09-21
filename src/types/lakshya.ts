@@ -19,6 +19,8 @@ export interface Registration {
   college?: string | null;
   gender?: string | null;
   cadetType?: string | null;
+  vertical?: LakshyaVertical | 'Both' | string;
+  verticals?: LakshyaVertical[];
   source: RegistrationSource;
   eligible: boolean;
   registeredAt: any;

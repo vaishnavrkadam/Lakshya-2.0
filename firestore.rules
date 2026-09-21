@@ -42,10 +42,16 @@ service cloud.firestore {
     // Slots collection (firing relays and capacities)
     match /artifacts/{appId}/public/data/slots/{slotId} {
       allow read: if true; // Publicly readable for schedule display
-      // Students can atomically reserve 1 slot seat; Admins have full management
+      // Students can atomically reserve 1 slot seat within capacity; Admins have full management
       allow update: if signedIn() && (
         isAdmin() ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'updatedAt'])
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'updatedAt']) &&
+          request.resource.data.booked == resource.data.booked + 1 &&
+          resource.data.booked < resource.data.capacity &&
+          resource.data.isActive == true &&
+          !slotId.matches('.*finals.*')
+        )
       );
       allow create, delete: if isAdmin();
     }
@@ -63,7 +69,8 @@ service cloud.firestore {
         (request.resource.data.participantEmail.lower() == normalizedEmail() &&
          request.resource.data.checkedIn == false &&
          request.resource.data.isDQ == false &&
-         request.resource.data.totalScore == null)
+         request.resource.data.totalScore == null &&
+         !request.resource.data.slotId.matches('.*finals.*'))
       );
       // Only Range Safety Officers / Admins can delete
       allow delete: if isAdmin();
@@ -78,6 +85,12 @@ service cloud.firestore {
         (request.resource.data.bestScore == 0 && request.resource.data.totalScore == 0)
       );
       allow delete: if isAdmin();
+    }
+
+    // Scorecards collection (round-by-round official target shots)
+    match /artifacts/{appId}/public/data/scorecards/{scorecardId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
 
     // Audit trail (immutable append-only)

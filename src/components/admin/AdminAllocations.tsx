@@ -8,6 +8,7 @@ import {
 } from '../../lib/firebase';
 import { 
   LAKSHYA_EVENT_ID, 
+  DEFAULT_SLOT_CAPACITY,
   normalizeEmail, 
   deterministicBookingId,
   generateTicketId,
@@ -51,6 +52,17 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
   // Available slots for the chosen vertical
   const availableSlots = slots.filter((s) => s.vertical === selectedVertical && s.isActive);
 
+  // Registered verticals for selected shooter
+  const allowedVerticals: LakshyaVertical[] = selectedShooter?.verticals && selectedShooter.verticals.length > 0
+    ? selectedShooter.verticals
+    : selectedShooter?.vertical === 'Both'
+    ? ['Air Rifle', 'Air Pistol']
+    : selectedShooter?.vertical
+    ? [selectedShooter.vertical as LakshyaVertical]
+    : ['Air Rifle', 'Air Pistol'];
+
+  const isVerticalRegistered = !selectedShooter || allowedVerticals.includes(selectedVertical);
+
   // Check if selected shooter already has booking in chosen vertical
   const existingBooking = selectedShooter
     ? bookings.find(
@@ -64,6 +76,13 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
     e.preventDefault();
     if (!selectedShooter) {
       setStatusMessage({ type: 'error', text: 'Please search and select a registered participant.' });
+      return;
+    }
+    if (!isVerticalRegistered) {
+      setStatusMessage({ 
+        type: 'error', 
+        text: `Participant ${selectedShooter.name} is only registered for ${allowedVerticals.join(' & ')}.` 
+      });
       return;
     }
     if (!selectedSlotId) {
@@ -111,7 +130,7 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
 
         const slotData = slotSnap.data() as Slot;
         const currentBooked = slotData.booked ?? 0;
-        const cap = slotData.capacity ?? (selectedVertical === 'Air Rifle' ? 18 : 6);
+        const cap = slotData.capacity ?? DEFAULT_SLOT_CAPACITY[selectedVertical];
 
         if (!allowCapacityOverride && currentBooked >= cap) {
           throw new Error('This slot is full. Enable "Allow Capacity Override" if authorized to add an emergency lane.');
@@ -305,7 +324,7 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
                     : 'bg-white border-[#CFC6B6] text-[#6F6A61] hover:bg-[#E8E0D2]'
                 }`}
               >
-                Air Rifle (18 Lanes)
+                Air Rifle (40 Lanes)
               </button>
               <button
                 type="button"
@@ -319,9 +338,18 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
                     : 'bg-white border-[#CFC6B6] text-[#6F6A61] hover:bg-[#E8E0D2]'
                 }`}
               >
-                Air Pistol (6 Lanes)
+                Air Pistol (16 Lanes)
               </button>
             </div>
+
+            {selectedShooter && !isVerticalRegistered && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>
+                  Participant is NOT registered for {selectedVertical}. Registered vertical(s): {allowedVerticals.join(' & ')}.
+                </span>
+              </div>
+            )}
 
             {existingBooking && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-2">
@@ -346,7 +374,7 @@ export default function AdminAllocations({ registrations, slots, bookings }: Adm
               <option value="">-- Choose active firing slot --</option>
               {availableSlots.map((s) => {
                 const booked = s.booked ?? 0;
-                const cap = s.capacity ?? (selectedVertical === 'Air Rifle' ? 18 : 6);
+                const cap = s.capacity ?? DEFAULT_SLOT_CAPACITY[selectedVertical];
                 const isFull = booked >= cap;
                 return (
                   <option key={s.id} value={s.id}>

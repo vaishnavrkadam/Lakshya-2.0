@@ -20,25 +20,49 @@ export const ADMIN_EMAILS: readonly string[] = [
 ] as const;
 
 export const DEFAULT_SLOT_CAPACITY: Record<LakshyaVertical, number> = {
-  'Air Rifle': 60,
-  'Air Pistol': 60,
+  'Air Rifle': 40,
+  'Air Pistol': 16,
 };
 
 export const EVENT_DATES = [
-  { dateKey: '2026-09-26', dateLabel: '26th September 2026' },
-  { dateKey: '2026-09-27', dateLabel: '27th September 2026' },
+  { dateKey: '2026-09-26', dateLabel: '26 September 2026' },
+  { dateKey: '2026-09-27', dateLabel: '27 September 2026' },
 ] as const;
 
-export const STANDARD_HOURLY_SLOTS = [
-  { timeLabel: '08:00 - 09:00 HRS', startMinutes: 480, endMinutes: 540 },
-  { timeLabel: '09:00 - 10:00 HRS', startMinutes: 540, endMinutes: 600 },
-  { timeLabel: '10:00 - 11:00 HRS', startMinutes: 600, endMinutes: 660 },
-  { timeLabel: '11:00 - 12:00 HRS', startMinutes: 660, endMinutes: 720 },
-  { timeLabel: '12:00 - 13:00 HRS', startMinutes: 720, endMinutes: 780 },
-  { timeLabel: '13:00 - 14:00 HRS', startMinutes: 780, endMinutes: 840 },
-  { timeLabel: '14:00 - 15:00 HRS', startMinutes: 840, endMinutes: 900 },
-  { timeLabel: '15:00 - 16:00 HRS', startMinutes: 900, endMinutes: 960 },
+export interface LakshyaScheduledSlot {
+  slotId: string;
+  timeLabel: string;
+  startMinutes: number;
+  endMinutes: number;
+}
+
+// Day 1 — 26 September: 7 bookable slots, Lunch Break (12:00–12:30) omitted
+export const DAY_1_SLOTS: readonly LakshyaScheduledSlot[] = [
+  { slotId: 'slot-1', timeLabel: '07:30–09:00', startMinutes: 450, endMinutes: 540 },
+  { slotId: 'slot-2', timeLabel: '08:30–10:00', startMinutes: 510, endMinutes: 600 },
+  { slotId: 'slot-3', timeLabel: '09:30–11:00', startMinutes: 570, endMinutes: 660 },
+  { slotId: 'slot-4', timeLabel: '10:30–12:00', startMinutes: 630, endMinutes: 720 },
+  { slotId: 'slot-5', timeLabel: '12:30–14:00', startMinutes: 750, endMinutes: 840 },
+  { slotId: 'slot-6', timeLabel: '13:30–15:00', startMinutes: 810, endMinutes: 900 },
+  { slotId: 'slot-7', timeLabel: '14:30–16:00', startMinutes: 870, endMinutes: 960 },
 ] as const;
+
+// Day 2 — 27 September: 6 bookable slots, Lunch Break (12:00–12:30) omitted, Finals (15:00–16:30) non-bookable
+export const DAY_2_SLOTS: readonly LakshyaScheduledSlot[] = [
+  { slotId: 'slot-1', timeLabel: '07:30–09:00', startMinutes: 450, endMinutes: 540 },
+  { slotId: 'slot-2', timeLabel: '08:30–10:00', startMinutes: 510, endMinutes: 600 },
+  { slotId: 'slot-3', timeLabel: '09:30–11:00', startMinutes: 570, endMinutes: 660 },
+  { slotId: 'slot-4', timeLabel: '10:30–12:00', startMinutes: 630, endMinutes: 720 },
+  { slotId: 'slot-5', timeLabel: '12:30–14:00', startMinutes: 750, endMinutes: 840 },
+  { slotId: 'slot-6', timeLabel: '13:30–15:00', startMinutes: 810, endMinutes: 900 },
+] as const;
+
+export const OFFICIAL_SCHEDULE_BY_DATE: Record<string, readonly LakshyaScheduledSlot[]> = {
+  '2026-09-26': DAY_1_SLOTS,
+  '2026-09-27': DAY_2_SLOTS,
+};
+
+export const STANDARD_HOURLY_SLOTS = DAY_1_SLOTS;
 
 export const SCORE_RANGE = {
   min: 0,

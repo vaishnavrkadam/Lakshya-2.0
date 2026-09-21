@@ -40,30 +40,24 @@ export function AuthProvider({ children }) {
         // Realtime listener for registration status
         const regRef = getDocRef('registrations', cleanEmail);
         unsubscribeRegistration = onSnapshot(regRef, async (docSnap) => {
-          if (docSnap.exists()) {
+          if (docSnap.exists() && docSnap.data()?.eligible !== false) {
             setRegistration({ id: docSnap.id, ...docSnap.data() });
             setOnboardingOpen(false);
             setLoading(false);
           } else {
-            // Check alternate path as fallback (handles both web app ID and lakshya-02)
-            try {
-              const altAppId = APP_ID === 'lakshya-02' 
-                ? '1:205566133235:web:691e34c3cd87d984980886' 
-                : 'lakshya-02';
-              const altDocRef = doc(db, `artifacts/${altAppId}/public/data/registrations`, cleanEmail);
-              const altSnap = await getDoc(altDocRef);
-              if (altSnap.exists()) {
-                setRegistration({ id: altSnap.id, ...altSnap.data() });
-                setOnboardingOpen(false);
-                setLoading(false);
-                return;
-              }
-            } catch (_) {}
-
+            // User was deleted or is ineligible
             setRegistration(null);
-            // If logged in but not in registrations, trigger onboarding dialog
-            setOnboardingOpen(true);
+            setUserBookings([]);
             setLoading(false);
+
+            if (!isAdminEmail(cleanEmail)) {
+              // Automatically invalidate authentication session for deleted/unregistered users
+              setCurrentUser(null);
+              setOnboardingOpen(true);
+              try {
+                await signOut(auth);
+              } catch (_) {}
+            }
           }
         }, (error) => {
           console.error("Error fetching registration:", error);

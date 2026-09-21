@@ -8,7 +8,12 @@ import {
   deleteDoc,
   serverTimestamp 
 } from '../../lib/firebase';
-import { LAKSHYA_EVENT_ID } from '../../config/lakshya';
+import { 
+  LAKSHYA_EVENT_ID, 
+  DEFAULT_SLOT_CAPACITY, 
+  EVENT_DATES, 
+  OFFICIAL_SCHEDULE_BY_DATE 
+} from '../../config/lakshya';
 import type { Slot, Booking, LakshyaVertical } from '../../types/lakshya';
 import { 
   Calendar, 
@@ -40,9 +45,9 @@ export default function AdminSlots({ slots, bookings }: AdminSlotsProps) {
   const [newVertical, setNewVertical] = useState<LakshyaVertical>('Air Rifle');
   const [newDateKey, setNewDateKey] = useState<string>('2026-09-26');
   const [newDateLabel, setNewDateLabel] = useState<string>('26 September 2026');
-  const [newTimeLabel, setNewTimeLabel] = useState<string>('08:00 - 09:00 HRS');
-  const [newCapacity, setNewCapacity] = useState<number>(60);
-  const [newStartMinutes, setNewStartMinutes] = useState<number>(480);
+  const [newTimeLabel, setNewTimeLabel] = useState<string>('07:30–09:00');
+  const [newCapacity, setNewCapacity] = useState<number>(DEFAULT_SLOT_CAPACITY['Air Rifle']);
+  const [newStartMinutes, setNewStartMinutes] = useState<number>(450);
   const [savingSlot, setSavingSlot] = useState<boolean>(false);
 
   // Filter slots
@@ -104,72 +109,59 @@ export default function AdminSlots({ slots, bookings }: AdminSlotsProps) {
     }
   };
 
-  // Quick Seed helper for 2-day standard schedule (26th & 27th September, 8 slots, 60 capacity)
+  // Official Seed helper for 2-day schedule (26th Sept: 7 slots, 27th Sept: 6 slots; Rifle: 40, Pistol: 16)
   const handleSeedStandardSlots = async () => {
-    if (!window.confirm("Initialize standard 2-day schedule for 26th & 27th September? (8 hourly slots per day, 08:00 - 16:00 HRS, 60 participants capacity per slot)")) {
+    if (!window.confirm("Initialize official 2-day schedule for 26th & 27th September?\n- 26 Sept: 7 slots (07:30–16:00, lunch omitted)\n- 27 Sept: 6 slots (07:30–15:00, lunch omitted, finals excluded)\n- Air Rifle Capacity: 40 lanes | Air Pistol Capacity: 16 lanes")) {
       return;
     }
 
-    const times = [
-      { label: "08:00 - 09:00 HRS", minutes: 480 },
-      { label: "09:00 - 10:00 HRS", minutes: 540 },
-      { label: "10:00 - 11:00 HRS", minutes: 600 },
-      { label: "11:00 - 12:00 HRS", minutes: 660 },
-      { label: "12:00 - 13:00 HRS", minutes: 720 },
-      { label: "13:00 - 14:00 HRS", minutes: 780 },
-      { label: "14:00 - 15:00 HRS", minutes: 840 },
-      { label: "15:00 - 16:00 HRS", minutes: 900 },
-    ];
-
-    const days = [
-      { dateKey: "2026-09-26", dateLabel: "26 September 2026" },
-      { dateKey: "2026-09-27", dateLabel: "27 September 2026" },
-    ];
-
     try {
-      for (const day of days) {
-        for (const t of times) {
-          // Air Rifle slot (Capacity 60)
-          const rifleId = `${LAKSHYA_EVENT_ID}_${day.dateKey}_air-rifle_${t.minutes}`;
+      for (const day of EVENT_DATES) {
+        const daySlots = OFFICIAL_SCHEDULE_BY_DATE[day.dateKey] || [];
+        for (const t of daySlots) {
+          // Air Rifle slot (Capacity 40)
+          const rifleCap = DEFAULT_SLOT_CAPACITY['Air Rifle'];
+          const rifleId = `${LAKSHYA_EVENT_ID}_${day.dateKey}_air-rifle_${t.startMinutes}`;
           await setDoc(getDocRef('slots', rifleId), {
             id: rifleId,
             eventId: LAKSHYA_EVENT_ID,
             vertical: 'Air Rifle',
             dateKey: day.dateKey,
             dateLabel: day.dateLabel,
-            timeLabel: t.label,
-            startMinutes: t.minutes,
-            endMinutes: t.minutes + 60,
-            capacity: 60,
+            timeLabel: t.timeLabel,
+            startMinutes: t.startMinutes,
+            endMinutes: t.endMinutes,
+            capacity: rifleCap,
             booked: 0,
             isActive: true,
-            sortOrder: t.minutes,
+            sortOrder: t.startMinutes,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           }, { merge: true });
 
-          // Air Pistol slot (Capacity 60)
-          const pistolId = `${LAKSHYA_EVENT_ID}_${day.dateKey}_air-pistol_${t.minutes}`;
+          // Air Pistol slot (Capacity 16)
+          const pistolCap = DEFAULT_SLOT_CAPACITY['Air Pistol'];
+          const pistolId = `${LAKSHYA_EVENT_ID}_${day.dateKey}_air-pistol_${t.startMinutes}`;
           await setDoc(getDocRef('slots', pistolId), {
             id: pistolId,
             eventId: LAKSHYA_EVENT_ID,
             vertical: 'Air Pistol',
             dateKey: day.dateKey,
             dateLabel: day.dateLabel,
-            timeLabel: t.label,
-            startMinutes: t.minutes,
-            endMinutes: t.minutes + 60,
-            capacity: 60,
+            timeLabel: t.timeLabel,
+            startMinutes: t.startMinutes,
+            endMinutes: t.endMinutes,
+            capacity: pistolCap,
             booked: 0,
             isActive: true,
-            sortOrder: t.minutes,
+            sortOrder: t.startMinutes,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           }, { merge: true });
         }
       }
 
-      alert("Standard 2-day schedules (26th & 27th September, 60 capacity/slot) generated successfully!");
+      alert("Official 2-day schedule generated successfully! (Air Rifle: 40 lanes, Air Pistol: 16 lanes)");
     } catch (err) {
       console.error("Failed to seed slots:", err);
       alert("Error seeding slots.");
@@ -252,7 +244,7 @@ export default function AdminSlots({ slots, bookings }: AdminSlotsProps) {
                 (b) => b.slotId === slot.id && b.status === 'confirmed'
               );
               const bookedCount = slotBookings.length;
-              const cap = slot.capacity || (slot.vertical === 'Air Rifle' ? 18 : 6);
+              const cap = slot.capacity || DEFAULT_SLOT_CAPACITY[slot.vertical as LakshyaVertical] || 40;
               const isExpanded = expandedSlotId === slot.id;
               const pct = cap > 0 ? Math.round((bookedCount / cap) * 100) : 0;
 
@@ -404,7 +396,7 @@ export default function AdminSlots({ slots, bookings }: AdminSlotsProps) {
                   onChange={(e) => {
                     const v = e.target.value as LakshyaVertical;
                     setNewVertical(v);
-                    setNewCapacity(v === 'Air Rifle' ? 18 : 6);
+                    setNewCapacity(DEFAULT_SLOT_CAPACITY[v]);
                   }}
                   className="w-full p-2 bg-white border border-[#CFC6B6] rounded font-medium"
                 >

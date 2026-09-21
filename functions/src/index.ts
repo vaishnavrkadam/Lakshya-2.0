@@ -18,6 +18,8 @@ const ADMIN_EMAILS = new Set([
   'lokakshas.cs24@rvce.edu.in',
   'shaurya.lakshya.admin@gmail.com',
   'rvcecdtlokakshasridhar@gmail.com',
+  'vaishnavkadam57@gmail.com',
+  'vaishnavrkadam.cs25@rvce.edu.in',
 ]);
 
 type Vertical = 'Air Rifle' | 'Air Pistol';
@@ -333,8 +335,8 @@ export const adminSetScore = onCall(async (request) => {
   const isDQ = request.data?.isDQ === true;
   const score = rawScore == null || rawScore === '' ? null : Number(rawScore);
 
-  if (!bookingId || (score !== null && (!Number.isFinite(score) || score < 0 || score > 10))) {
-    throw new HttpsError('invalid-argument', 'bookingId is required and score must be between 0 and 10.');
+  if (!bookingId || (score !== null && (!Number.isFinite(score) || score < 0 || score > 109))) {
+    throw new HttpsError('invalid-argument', 'bookingId is required and total score must be between 0 and 109.');
   }
 
   const bookingRef = db.doc(appDataPath('bookings', bookingId));

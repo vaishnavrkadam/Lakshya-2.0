@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { getDocRef, setDoc, updateDoc, serverTimestamp } from '../../lib/firebase';
+import { getDocRef, setDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp } from '../../lib/firebase';
 import { normalizeEmail } from '../../config/lakshya';
-import type { Registration, Booking } from '../../types/lakshya';
+import { useAuth } from '../../context/AuthContext';
+import type { Registration, Booking, LakshyaVertical } from '../../types/lakshya';
 import { 
   Users, 
   Search, 
@@ -15,7 +16,8 @@ import {
   Download,
   AlertCircle,
   GraduationCap,
-  Award
+  Award,
+  Trash2
 } from 'lucide-react';
 import { downloadCertificatePdf } from '../../lib/certificates';
 
@@ -25,6 +27,7 @@ interface AdminRegistrationsProps {
 }
 
 export default function AdminRegistrations({ registrations, bookings }: AdminRegistrationsProps) {
+  const { currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'unbooked' | 'rifle' | 'pistol' | 'both'>('all');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -38,6 +41,7 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
   const [newBranch, setNewBranch] = useState<string>('');
   const [newYear, setNewYear] = useState<string>('1st Year');
   const [newGender, setNewGender] = useState<string>('Male');
+  const [newVertical, setNewVertical] = useState<'Air Rifle' | 'Air Pistol' | 'Both'>('Air Rifle');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Bulk import form
@@ -121,6 +125,8 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     const cleanRvce = newRvceEmail.trim() ? normalizeEmail(newRvceEmail) : '';
     const regRef = getDocRef('registrations', cleanEmail);
 
+    const verts: LakshyaVertical[] = newVertical === 'Both' ? ['Air Rifle', 'Air Pistol'] : [newVertical];
+
     const regData: Partial<Registration> = {
       id: cleanEmail,
       name: newName.trim(),
@@ -130,6 +136,8 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
       branch: newBranch.trim().toUpperCase() || '',
       yearOfStudy: newYear || '1st Year',
       gender: newGender,
+      vertical: newVertical,
+      verticals: verts,
       college: 'RVCE',
       source: 'manual',
       eligible: true,
@@ -146,11 +154,77 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
       setNewRvceEmail('');
       setNewUsn('');
       setNewBranch('');
+      setNewVertical('Air Rifle');
     } catch (err) {
       console.error("Failed to add registration:", err);
       alert("Error adding registration document.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteRegistration = async (reg: Registration) => {
+    const cleanEmail = normalizeEmail(reg.email);
+    if (!window.confirm(`Are you sure you want to permanently delete competitor "${reg.name}" (${cleanEmail})? This will cancel their bookings, restore slot availability, and revoke their access.`)) {
+      return;
+    }
+
+    try {
+      // 1. Delete main registration doc
+      await deleteDoc(getDocRef('registrations', cleanEmail));
+
+      // 2. Delete alternate alias doc if present
+      if (reg.rvceEmail && normalizeEmail(reg.rvceEmail) !== cleanEmail) {
+        try {
+          await deleteDoc(getDocRef('registrations', normalizeEmail(reg.rvceEmail)));
+        } catch (_) {}
+      }
+
+      // 3. Cancel and delete all user bookings and restore slot capacities
+      const userBookings = bookings.filter(
+        (b) => b.participantEmail.toLowerCase() === cleanEmail && b.status === 'confirmed'
+      );
+
+      for (const b of userBookings) {
+        try {
+          await deleteDoc(getDocRef('bookings', b.id));
+          await deleteDoc(getDocRef('leaderboard_entries', b.id));
+          if (b.slotId) {
+            const slotRef = getDocRef('slots', b.slotId);
+            runTransaction(slotRef.firestore, async (tx) => {
+              const snap = await tx.get(slotRef);
+              if (snap.exists()) {
+                const currentBooked = snap.data().booked ?? 0;
+                tx.update(slotRef, {
+                  booked: Math.max(0, currentBooked - 1),
+                  updatedAt: serverTimestamp(),
+                });
+              }
+            }).catch(console.error);
+          }
+        } catch (err) {
+          console.error("Error cleaning up booking for deleted user:", err);
+        }
+      }
+
+      // 4. Record audit log
+      const auditRef = getDocRef('audit_logs', `audit_del_reg_${Date.now()}`);
+      await setDoc(auditRef, {
+        id: auditRef.id,
+        action: 'REGISTRATION_DELETED',
+        entityType: 'registration',
+        entityId: cleanEmail,
+        actorEmail: currentUser?.email || 'admin',
+        metadata: {
+          name: reg.name,
+          email: cleanEmail,
+          cancelledBookingsCount: userBookings.length,
+        },
+        createdAt: serverTimestamp(),
+      });
+    } catch (err: any) {
+      console.error("Failed to delete competitor:", err);
+      alert("Error deleting competitor: " + (err.message || err));
     }
   };
 
@@ -183,99 +257,125 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     setBulkMessage(null);
 
     const lines = bulkText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    let count = 0;
-    let errors = 0;
+
+    interface AggregatedShooter {
+      primaryEmail: string;
+      name: string;
+      rvceEmail: string;
+      dob: string;
+      phone: string;
+      usn: string;
+      branch: string;
+      yearOfStudy: string;
+      verticals: Set<LakshyaVertical>;
+    }
+
+    const shooterMap = new Map<string, AggregatedShooter>();
 
     for (const line of lines) {
       const lowerLine = line.toLowerCase();
       // Skip header row if pasted
-      if (lowerLine.includes('timestamp') && (lowerLine.includes('email') || lowerLine.includes('name'))) {
+      if (lowerLine.includes('timestamp') && (lowerLine.includes('email') || lowerLine.includes('name') || lowerLine.includes('category'))) {
         continue;
       }
 
       const parts = parseCsvLine(line);
 
-      // Expected Google Form columns:
-      // [0] Timestamp, [1] Email Address, [2] Name, [3] RVCE Email ID, [4] Date of Birth, [5] Phone Number, [6] USN, [7] Branch, [8] Year of Study
-      if (parts.length >= 8 && parts[1].includes('@')) {
-        const primaryEmail = normalizeEmail(parts[1]);
-        const name = parts[2] || primaryEmail.split('@')[0];
-        const rvceEmail = parts[3] ? normalizeEmail(parts[3]) : '';
-        const dob = parts[4] || '';
-        const phone = parts[5] || '';
-        const usn = parts[6] ? parts[6].toUpperCase() : '';
-        const branch = parts[7] ? parts[7].toUpperCase() : '';
-        const yearOfStudy = parts[8] || '';
+      // Detect email index
+      let emailIdx = 1;
+      if (!parts[emailIdx]?.includes('@')) {
+        const found = parts.findIndex((p) => p.includes('@'));
+        if (found !== -1) emailIdx = found;
+      }
 
-        const record: Partial<Registration> = {
-          id: primaryEmail,
+      const rawEmail = parts[emailIdx] || '';
+      if (!rawEmail.includes('@')) continue;
+
+      const primaryEmail = normalizeEmail(rawEmail);
+      const name = parts[2] || primaryEmail.split('@')[0];
+      const rvceEmail = parts[3] ? normalizeEmail(parts[3]) : '';
+      const dob = parts[4] || '';
+      const phone = parts[5] || '';
+      const usn = parts[6] ? parts[6].toUpperCase() : '';
+      const branch = parts[7] ? parts[7].toUpperCase() : '';
+      const yearOfStudy = parts[8] || '';
+
+      // Column 9: Preferred Shooting Category (Air Rifle, Air Pistol)
+      const categoryRaw = (parts[9] || '').toLowerCase();
+      const detectedVerticals: LakshyaVertical[] = [];
+      if (categoryRaw.includes('pistol')) detectedVerticals.push('Air Pistol');
+      if (categoryRaw.includes('rifle')) detectedVerticals.push('Air Rifle');
+      if (detectedVerticals.length === 0) detectedVerticals.push('Air Rifle');
+
+      const existing = shooterMap.get(primaryEmail);
+      if (existing) {
+        detectedVerticals.forEach((v) => existing.verticals.add(v));
+        if (!existing.name && name) existing.name = name;
+        if (!existing.usn && usn) existing.usn = usn;
+        if (!existing.branch && branch) existing.branch = branch;
+        if (!existing.phone && phone) existing.phone = phone;
+      } else {
+        // Pre-populate with existing verticals from current roster if already registered
+        const dbShooter = registrations.find((r) => r.email.toLowerCase() === primaryEmail);
+        const initialVerts = new Set<LakshyaVertical>(detectedVerticals);
+        if (dbShooter) {
+          if (Array.isArray(dbShooter.verticals)) {
+            dbShooter.verticals.forEach((v) => initialVerts.add(v));
+          } else if (dbShooter.vertical === 'Air Rifle' || dbShooter.vertical === 'Air Pistol') {
+            initialVerts.add(dbShooter.vertical as LakshyaVertical);
+          }
+        }
+        shooterMap.set(primaryEmail, {
+          primaryEmail,
           name,
-          email: primaryEmail,
           rvceEmail: rvceEmail || primaryEmail,
           dob,
           phone,
           usn,
           branch,
           yearOfStudy,
-          college: 'RVCE',
-          source: 'google_form',
-          eligible: true,
-          registeredAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
+          verticals: initialVerts,
+        });
+      }
+    }
 
-        try {
-          await setDoc(getDocRef('registrations', primaryEmail), record, { merge: true });
-          count++;
-        } catch (err) {
-          console.error("Failed importing form row:", line, err);
-          errors++;
-        }
-      } else {
-        // Fallback: Simple "Email" or "Name, Email" or "Name, Email, Gender"
-        let name = 'Participant';
-        let email = '';
-        let gender = 'Male';
+    let count = 0;
+    let errors = 0;
 
-        if (parts.length >= 2) {
-          if (parts[0].includes('@')) {
-            email = normalizeEmail(parts[0]);
-            name = parts[1];
-            if (parts[2]) gender = parts[2];
-          } else {
-            name = parts[0];
-            email = normalizeEmail(parts[1]);
-            if (parts[2]) gender = parts[2];
-          }
-        } else if (parts.length === 1 && parts[0].includes('@')) {
-          email = normalizeEmail(parts[0]);
-          name = email.split('@')[0].replace(/[._]/g, ' ');
-        }
+    for (const shooter of shooterMap.values()) {
+      const verticalsArray = Array.from(shooter.verticals);
+      const vertical = verticalsArray.length > 1 ? 'Both' : (verticalsArray[0] || 'Air Rifle');
 
-        if (email && email.includes('@')) {
-          try {
-            await setDoc(getDocRef('registrations', email), {
-              id: email,
-              name,
-              email,
-              gender,
-              college: 'RVCE',
-              source: 'imported',
-              eligible: true,
-              registeredAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            }, { merge: true });
-            count++;
-          } catch (err) {
-            console.error("Failed importing simple row:", line, err);
-            errors++;
-          }
-        }
+      const record: Partial<Registration> = {
+        id: shooter.primaryEmail,
+        name: shooter.name,
+        email: shooter.primaryEmail,
+        rvceEmail: shooter.rvceEmail || shooter.primaryEmail,
+        dob: shooter.dob,
+        phone: shooter.phone,
+        usn: shooter.usn,
+        branch: shooter.branch,
+        yearOfStudy: shooter.yearOfStudy,
+        vertical,
+        verticals: verticalsArray,
+        college: 'RVCE',
+        source: 'google_form',
+        eligible: true,
+        registeredAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      try {
+        await setDoc(getDocRef('registrations', shooter.primaryEmail), record, { merge: true });
+        count++;
+      } catch (err) {
+        console.error("Failed importing competitor:", shooter.primaryEmail, err);
+        errors++;
       }
     }
 
     setBulkProcessing(false);
-    setBulkMessage(`Roster Import Complete: Successfully allowlisted ${count} student records${errors > 0 ? ` (${errors} failed)` : ''}.`);
+    setBulkMessage(`Roster Import Complete: Successfully allowlisted ${count} competitor records${errors > 0 ? ` (${errors} failed)` : ''}.`);
     if (errors === 0) {
       setBulkText('');
     }
@@ -425,26 +525,44 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {hasRifle ? (
-                            <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800 font-bold">
-                              AIR RIFLE
-                            </span>
-                          ) : (
-                            <span className="text-[10px] px-2 py-0.5 bg-[#0B0C10] border border-[#282B3A] text-[#64748B]">
-                              No Rifle
-                            </span>
-                          )}
+                        <div className="space-y-1.5">
+                          {/* Registered Discipline Badge */}
+                          <div>
+                            {Array.isArray(reg.verticals) && reg.verticals.length > 1 ? (
+                              <span className="text-[10px] px-2 py-0.5 bg-purple-950/70 text-purple-300 border border-purple-800 font-bold">
+                                DUAL: RIFLE + PISTOL
+                              </span>
+                            ) : reg.vertical === 'Air Pistol' || (reg.verticals && reg.verticals.includes('Air Pistol')) ? (
+                              <span className="text-[10px] px-2 py-0.5 bg-amber-950/70 text-amber-300 border border-amber-800 font-bold">
+                                REG: AIR PISTOL
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 bg-sky-950/70 text-sky-300 border border-sky-800 font-bold">
+                                REG: AIR RIFLE
+                              </span>
+                            )}
+                          </div>
 
-                          {hasPistol ? (
-                            <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800 font-bold">
-                              AIR PISTOL
-                            </span>
-                          ) : (
-                            <span className="text-[10px] px-2 py-0.5 bg-[#0B0C10] border border-[#282B3A] text-[#64748B]">
-                              No Pistol
-                            </span>
-                          )}
+                          {/* Bookings pills */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {hasRifle && (
+                              <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800 font-bold">
+                                RIFLE BOOKED
+                              </span>
+                            )}
+
+                            {hasPistol && (
+                              <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800 font-bold">
+                                PISTOL BOOKED
+                              </span>
+                            )}
+
+                            {!hasRifle && !hasPistol && (
+                              <span className="text-[10px] px-2 py-0.5 bg-[#0B0C10] border border-[#282B3A] text-[#64748B]">
+                                No Booking
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -471,6 +589,15 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                             className="text-[11px] text-[#64748B] hover:text-[#DC2626] underline uppercase tracking-wider"
                           >
                             {reg.eligible ? 'Lock' : 'Authorize'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRegistration(reg)}
+                            title={`Permanently delete ${reg.name}`}
+                            className="p-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-800 text-red-400 rounded transition-colors inline-flex items-center gap-1 text-[11px] font-mono"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Delete</span>
                           </button>
                         </div>
                       </td>
@@ -571,6 +698,19 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
               </div>
 
               <div>
+                <label className="text-[#64748B] uppercase block mb-1">Registered Discipline / Category</label>
+                <select
+                  value={newVertical}
+                  onChange={(e) => setNewVertical(e.target.value as any)}
+                  className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] focus:outline-none"
+                >
+                  <option value="Air Rifle">Air Rifle</option>
+                  <option value="Air Pistol">Air Pistol</option>
+                  <option value="Both">Both (Dual Competitor)</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="text-[#64748B] uppercase block mb-1">Gender</label>
                 <select
                   value={newGender}
@@ -636,7 +776,7 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                   Google Sheet CSV Rows (Header row will be automatically ignored):
                 </label>
                 <div className="p-2 bg-[#0B0C10] border border-[#282B3A] text-[11px] text-[#64748B] mb-2">
-                  <span className="text-[#DC2626] font-bold">Columns Detected:</span> Timestamp, Email Address, Name, RVCE Email ID, Date of Birth, Phone Number, USN, Branch, and Year of Study
+                  <span className="text-[#DC2626] font-bold">Columns Detected:</span> Timestamp, Email Address, Name, RVCE Email ID, Date of Birth, Phone Number, USN, Branch, Year of Study, and <strong className="text-white">Preferred Shooting Category</strong> (Air Rifle / Air Pistol)
                 </div>
                 <textarea
                   rows={9}

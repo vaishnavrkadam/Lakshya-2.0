@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEFAULT_SLOT_CAPACITY } from '../../config/lakshya';
 import type { Registration, Slot, Booking } from '../../types/lakshya';
 import { 
   Users, 
@@ -34,8 +35,8 @@ export default function AdminDashboard({ registrations, slots, bookings }: Admin
   const rifleSlots = slots.filter((s) => s.vertical === 'Air Rifle' && s.isActive);
   const pistolSlots = slots.filter((s) => s.vertical === 'Air Pistol' && s.isActive);
 
-  const rifleTotalCapacity = rifleSlots.reduce((acc, s) => acc + (s.capacity || 18), 0);
-  const pistolTotalCapacity = pistolSlots.reduce((acc, s) => acc + (s.capacity || 6), 0);
+  const rifleTotalCapacity = rifleSlots.reduce((acc, s) => acc + (s.capacity || DEFAULT_SLOT_CAPACITY['Air Rifle']), 0);
+  const pistolTotalCapacity = pistolSlots.reduce((acc, s) => acc + (s.capacity || DEFAULT_SLOT_CAPACITY['Air Pistol']), 0);
 
   const rifleRemaining = Math.max(0, rifleTotalCapacity - rifleBookings.length);
   const pistolRemaining = Math.max(0, pistolTotalCapacity - pistolBookings.length);

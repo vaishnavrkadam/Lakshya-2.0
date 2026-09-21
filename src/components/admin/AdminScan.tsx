@@ -2,7 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type CameraDevice } from 'html5-qrcode';
 import { parseQrPayload } from '../../lib/bookingPayload';
-import { getDocRef, runTransaction, serverTimestamp } from '../../lib/firebase';
+import { 
+  getDocRef, 
+  getColRef, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  setDoc, 
+  runTransaction, 
+  serverTimestamp 
+} from '../../lib/firebase';
 import type { Booking, LakshyaQrPayload } from '../../types/lakshya';
 import { 
   ScanLine, 
@@ -87,8 +97,8 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         fps: 20,
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
           const edge = Math.min(viewfinderWidth, viewfinderHeight);
-          const size = Math.floor(edge * 0.9);
-          return { width: Math.max(size, 200), height: Math.max(size, 200) };
+          const size = Math.floor(edge * 0.75);
+          return { width: Math.max(size, 80), height: Math.max(size, 80) };
         },
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
@@ -107,17 +117,51 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         // frame decode ignore
       };
 
-      // Try camera by deviceId first if chosen, otherwise fallback to generic facingMode
+      let started = false;
+      // 1. If user selected a specific camera device ID, try that
       if (selectedCameraId) {
-        await html5QrCode.start(selectedCameraId, config, onSuccess, onError);
-      } else {
         try {
-          await html5QrCode.start({ facingMode: 'environment' }, config, onSuccess, onError);
-        } catch (envErr) {
-          console.warn("Environment camera failed, falling back to user facing camera...", envErr);
-          await html5QrCode.start({ facingMode: 'user' }, config, onSuccess, onError);
+          await html5QrCode.start(selectedCameraId, config, onSuccess, onError);
+          started = true;
+        } catch (e) {
+          console.warn("Could not start selected camera ID, falling back to facingMode", e);
         }
       }
+
+      // 2. Try environment (back) camera
+      if (!started) {
+        try {
+          await html5QrCode.start({ facingMode: 'environment' }, config, onSuccess, onError);
+          started = true;
+        } catch (envErr) {
+          console.warn("FacingMode environment failed, trying user camera...", envErr);
+        }
+      }
+
+      // 3. Try user (front) camera or any camera
+      if (!started) {
+        try {
+          await html5QrCode.start({ facingMode: 'user' }, config, onSuccess, onError);
+          started = true;
+        } catch (userErr) {
+          console.warn("FacingMode user failed, trying first available device...", userErr);
+          const allDevices = await Html5Qrcode.getCameras();
+          if (allDevices && allDevices.length > 0) {
+            await html5QrCode.start(allDevices[0].id, config, onSuccess, onError);
+            started = true;
+          } else {
+            throw new Error("No camera video stream could be accessed. Check camera permissions.");
+          }
+        }
+      }
+
+      // Update devices list now that permission is granted
+      try {
+        const devs = await Html5Qrcode.getCameras();
+        if (devs && devs.length > 0) {
+          setCameras(devs);
+        }
+      } catch (_) {}
 
       setIsScanning(true);
       setScannerStatus('LIVE SCANNING ACTIVE');
@@ -170,88 +214,98 @@ export default function AdminScan({ bookings }: AdminScanProps) {
     setScannedResult(null);
     setCheckInSuccess(null);
 
-    let payload: LakshyaQrPayload;
+    const clean = (rawString || '').trim();
+    if (!clean) return;
+
+    let payload: LakshyaQrPayload | null = null;
     try {
-      payload = parseQrPayload(rawString);
-    } catch (err) {
+      payload = parseQrPayload(clean);
+    } catch {
+      payload = null;
+    }
+
+    let bookingData: Booking | null = null;
+
+    if (payload?.bookingId) {
+      try {
+        const bookingRef = getDocRef('bookings', payload.bookingId);
+        const snap = await getDoc(bookingRef);
+        if (snap.exists()) {
+          bookingData = snap.data() as Booking;
+        }
+      } catch (e) {
+        console.warn("Direct bookingId lookup failed:", e);
+      }
+    }
+
+    // Fallback: match from bookings prop or query Firestore by ticketId or bookingId
+    if (!bookingData) {
+      const searchTarget = (payload?.ticketId || clean).toUpperCase();
+      const foundInProps = bookings.find(
+        (b) => b.ticketId?.toUpperCase() === searchTarget ||
+               b.id?.toUpperCase() === searchTarget ||
+               b.participantEmail?.toLowerCase() === clean.toLowerCase()
+      );
+      if (foundInProps) {
+        bookingData = foundInProps;
+      } else {
+        try {
+          const qTicket = query(getColRef('bookings'), where('ticketId', '==', searchTarget));
+          const snap = await getDocs(qTicket);
+          if (!snap.empty) {
+            bookingData = snap.docs[0].data() as Booking;
+          }
+        } catch (e) {
+          console.warn("Ticket query failed:", e);
+        }
+      }
+    }
+
+    if (!bookingData) {
       setScannedResult({
-        error: "Invalid QR format. This is not an official Lakshya 2.0 digital pass.",
+        payload: payload || undefined,
+        error: `Pass record not found in official ledger (code: "${clean.length > 30 ? clean.substring(0, 30) + '...' : clean}"). Check registration status or search manually below.`,
       });
       return;
     }
 
-    // Lookup booking in Firestore
-    try {
-      const bookingRef = getDocRef('bookings', payload.bookingId);
-      const snapshot = await runTransaction(bookingRef.firestore, async (tx) => {
-        return await tx.get(bookingRef);
-      });
-
-      if (!snapshot.exists()) {
-        setScannedResult({
-          payload,
-          error: "Pass record does not exist in the official ledger.",
-        });
-        return;
-      }
-
-      const bookingData = snapshot.data() as Booking;
-
-      // Verify token integrity
-      if (bookingData.qrToken !== payload.qrToken || bookingData.ticketId !== payload.ticketId) {
-        setScannedResult({
-          payload,
-          error: "SECURITY VERIFICATION FAILED. Token mismatch with database record.",
-        });
-        return;
-      }
-
-      // Check if already checked in
-      if (bookingData.checkedIn) {
-        setScannedResult({
-          booking: bookingData,
-          payload,
-          isDuplicate: true,
-        });
-
-        // Audit duplicate attempt
-        const auditRef = getDocRef('audit_logs', `audit_dup_${Date.now()}`);
-        runTransaction(bookingRef.firestore, async (tx) => {
-          tx.set(auditRef, {
-            id: auditRef.id,
-            action: 'CHECK_IN_DUPLICATE_ATTEMPT',
-            entityType: 'booking',
-            entityId: bookingData.id,
-            actorEmail: currentUser?.email || 'officer',
-            vertical: bookingData.vertical,
-            metadata: {
-              ticketId: bookingData.ticketId,
-              originalCheckInAt: bookingData.checkedInAt,
-              originalCheckedInBy: bookingData.checkedInBy,
-            },
-            createdAt: serverTimestamp(),
-          });
-        }).catch(console.error);
-
-        return;
-      }
-
-      // Valid and pending check-in
+    // Check if already checked in
+    if (bookingData.checkedIn) {
       setScannedResult({
         booking: bookingData,
-        payload,
+        payload: payload || undefined,
+        isDuplicate: true,
       });
 
-    } catch (err: any) {
-      console.error("Error validating pass:", err);
-      setScannedResult({
-        error: err.message || "Failed to query database for pass verification.",
-      });
+      // Audit duplicate attempt
+      const auditRef = getDocRef('audit_logs', `audit_dup_${Date.now()}`);
+      setDoc(auditRef, {
+        id: auditRef.id,
+        action: 'CHECK_IN_DUPLICATE_ATTEMPT',
+        entityType: 'booking',
+        entityId: bookingData.id,
+        actorEmail: currentUser?.email || 'officer',
+        vertical: bookingData.vertical,
+        metadata: {
+          ticketId: bookingData.ticketId,
+          originalCheckInAt: bookingData.checkedInAt,
+          originalCheckedInBy: bookingData.checkedInBy,
+        },
+        createdAt: serverTimestamp(),
+      }).catch(console.error);
+
+      return;
     }
+
+    // Valid booking ready for check-in
+    setScannedResult({
+      booking: bookingData,
+      payload: payload || undefined,
+    });
   };
 
   // Manual search by Ticket ID / Email / Name
-  const handleManualSearch = (e: React.FormEvent) => {
+  const handleManualSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualCode.trim()) return;
 
@@ -267,11 +321,26 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         booking: found,
         isDuplicate: found.checkedIn,
       });
-    } else {
-      setScannedResult({
-        error: `No booking record found matching "${queryCode}". Check spelling or verify allowlist.`,
-      });
+      return;
     }
+
+    // Also check Firestore directly if not found in prop cache
+    try {
+      const qTicket = query(getColRef('bookings'), where('ticketId', '==', queryCode));
+      const snap = await getDocs(qTicket);
+      if (!snap.empty) {
+        const bData = snap.docs[0].data() as Booking;
+        setScannedResult({
+          booking: bData,
+          isDuplicate: bData.checkedIn,
+        });
+        return;
+      }
+    } catch (_) {}
+
+    setScannedResult({
+      error: `No booking record found matching "${queryCode}". Check spelling or verify allowlist.`,
+    });
   };
 
   // Confirm Check-in
@@ -394,13 +463,14 @@ export default function AdminScan({ bookings }: AdminScanProps) {
             {/* Overlay placeholder displayed only when NOT scanning */}
             {!isScanning && (
               <div className="absolute inset-0 bg-[#0B0C10] flex flex-col items-center justify-center p-6 text-center space-y-3 pointer-events-auto">
-                <Camera className="w-12 h-12 mx-auto text-[#DC2626] opacity-80" />
+                <Camera className={`w-12 h-12 mx-auto text-[#DC2626] ${scannerStatus.includes('INITIALIZING') ? 'animate-pulse' : 'opacity-80'}`} />
                 <p className="font-mono text-xs text-[#64748B]">{scannerStatus}</p>
                 <button
+                  disabled={scannerStatus.includes('INITIALIZING')}
                   onClick={startScanner}
-                  className="px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-all"
+                  className="px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-all"
                 >
-                  [ Start Camera Scan ]
+                  {scannerStatus.includes('INITIALIZING') ? '[ Initializing Camera... ]' : '[ Start Camera Scan ]'}
                 </button>
               </div>
             )}

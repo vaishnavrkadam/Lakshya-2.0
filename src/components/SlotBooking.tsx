@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   db,
@@ -12,6 +12,7 @@ import {
 } from '../lib/firebase';
 import { 
   LAKSHYA_EVENT_ID, 
+  DEFAULT_SLOT_CAPACITY,
   normalizeEmail, 
   verticalSlug, 
   deterministicBookingId,
@@ -52,6 +53,30 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
       setSelectedGender(registration.gender as 'Male' | 'Female');
     }
   }, [registration]);
+
+  // Determine allowed verticals for logged-in competitor
+  const allowedVerticals = useMemo<LakshyaVertical[]>(() => {
+    if (!registration) return ['Air Rifle', 'Air Pistol'];
+    if (Array.isArray(registration.verticals) && registration.verticals.length > 0) {
+      return registration.verticals;
+    }
+    if (registration.vertical === 'Air Rifle') return ['Air Rifle'];
+    if (registration.vertical === 'Air Pistol') return ['Air Pistol'];
+    if (registration.vertical === 'Both') return ['Air Rifle', 'Air Pistol'];
+    return ['Air Rifle', 'Air Pistol'];
+  }, [registration]);
+
+  const canBookRifle = allowedVerticals.includes('Air Rifle');
+  const canBookPistol = allowedVerticals.includes('Air Pistol');
+
+  // Automatically select the allowed vertical if only one is allowed
+  useEffect(() => {
+    if (canBookPistol && !canBookRifle && selectedVertical !== 'Air Pistol') {
+      setSelectedVertical('Air Pistol');
+    } else if (canBookRifle && !canBookPistol && selectedVertical !== 'Air Rifle') {
+      setSelectedVertical('Air Rifle');
+    }
+  }, [canBookRifle, canBookPistol]);
 
   // Check if current user already has a booking in selected vertical
   const existingVerticalBooking = userBookings.find(
@@ -146,7 +171,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         }
         const slotData = slotSnap.data() as Slot;
         const currentBooked = slotData.booked ?? 0;
-        const capacity = slotData.capacity ?? (selectedVertical === 'Air Rifle' ? 18 : 6);
+        const capacity = slotData.capacity ?? DEFAULT_SLOT_CAPACITY[selectedVertical];
 
         if (currentBooked >= capacity) {
           throw new Error("SLOT_FULL");
@@ -168,6 +193,14 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         }
         if (!regData.eligible) {
           throw new Error("REGISTRATION_NOT_ELIGIBLE");
+        }
+
+        // Enforce registered vertical on database transaction level
+        const userAllowedVerts: LakshyaVertical[] = Array.isArray(regData.verticals) && regData.verticals.length > 0
+          ? regData.verticals
+          : (regData.vertical === 'Air Rifle' || regData.vertical === 'Air Pistol' ? [regData.vertical] : ['Air Rifle', 'Air Pistol']);
+        if (!userAllowedVerts.includes(selectedVertical)) {
+          throw new Error("VERTICAL_NOT_REGISTERED");
         }
 
         // 4. Generate unique tokens
@@ -245,6 +278,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         setBookingError("This slot just filled up! Please select another time slot.");
       } else if (err.message === "ALREADY_BOOKED_VERTICAL") {
         setBookingError(`You already have an active confirmed booking for ${selectedVertical}.`);
+      } else if (err.message === "VERTICAL_NOT_REGISTERED") {
+        setBookingError(`You are only registered for ${allowedVerticals.join(' and ')}. You cannot book ${selectedVertical}.`);
       } else if (err.message === "REGISTRATION_NOT_FOUND") {
         setBookingError("Your email was not found in the approved registrations roster.");
       } else if (err.message === "REGISTRATION_NOT_ELIGIBLE") {
@@ -285,34 +320,57 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         <div className="inline-flex p-1 bg-[#12131A] rounded-none border border-[#282B3A]">
           <button
             onClick={() => {
+              if (!canBookRifle) return;
               setSelectedVertical('Air Rifle');
               setBookingSuccess(null);
               setBookingError(null);
             }}
+            disabled={!canBookRifle}
             className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all ${
               selectedVertical === 'Air Rifle'
                 ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow-sm'
+                : !canBookRifle
+                ? 'text-[#64748B]/40 cursor-not-allowed'
                 : 'text-[#64748B] hover:text-[#F8FAFC]'
             }`}
           >
-            Air Rifle (18 Lanes)
+            Air Rifle (40 Lanes) {!canBookRifle && '[Not Registered]'}
           </button>
           <button
             onClick={() => {
+              if (!canBookPistol) return;
               setSelectedVertical('Air Pistol');
               setBookingSuccess(null);
               setBookingError(null);
             }}
+            disabled={!canBookPistol}
             className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all ${
               selectedVertical === 'Air Pistol'
                 ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow-sm'
+                : !canBookPistol
+                ? 'text-[#64748B]/40 cursor-not-allowed'
                 : 'text-[#64748B] hover:text-[#F8FAFC]'
             }`}
           >
-            Air Pistol (6 Lanes)
+            Air Pistol (16 Lanes) {!canBookPistol && '[Not Registered]'}
           </button>
         </div>
       </div>
+
+      {/* Registered discipline status notice */}
+      {currentUser && registration && (!canBookRifle || !canBookPistol) && (
+        <div className="bg-[#12131A] border border-[#282B3A] p-3 text-xs font-mono text-[#64748B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <span>
+            [ REGISTERED CATEGORY ]: You are authorized to book slots for{' '}
+            <strong className="text-[#DC2626]">
+              {canBookRifle && canBookPistol ? 'Air Rifle and Air Pistol' : canBookRifle ? 'Air Rifle only' : 'Air Pistol only'}
+            </strong>.
+          </span>
+          <span className="text-[10px] text-[#64748B]">
+            Dual competitors can switch tabs to book both disciplines independently.
+          </span>
+        </div>
+      )}
 
       {/* Auth / Eligibility Alerts */}
       {!currentUser && (
@@ -484,7 +542,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {dateSlots.map((slot) => {
                       const booked = slot.booked ?? 0;
-                      const cap = slot.capacity ?? (selectedVertical === 'Air Rifle' ? 18 : 6);
+                      const cap = slot.capacity ?? DEFAULT_SLOT_CAPACITY[selectedVertical];
                       const available = Math.max(0, cap - booked);
                       const isFull = available <= 0;
                       const isSelected = selectedSlotId === slot.id;
