@@ -116,6 +116,27 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     }
   };
 
+  const handleAddVertical = async (reg: Registration, verticalToAdd: LakshyaVertical) => {
+    try {
+      const cleanEmail = normalizeEmail(reg.email);
+      const regRef = getDocRef('registrations', cleanEmail);
+      const currentVerts = new Set<LakshyaVertical>(
+        Array.isArray(reg.verticals) && reg.verticals.length > 0
+          ? (reg.verticals as LakshyaVertical[])
+          : (reg.vertical === 'Both' ? ['Air Rifle', 'Air Pistol'] : [reg.vertical === 'Air Pistol' ? 'Air Pistol' : 'Air Rifle'])
+      );
+      currentVerts.add(verticalToAdd);
+      const finalVerts = Array.from(currentVerts);
+      await updateDoc(regRef, {
+        verticals: finalVerts,
+        vertical: finalVerts.length > 1 ? 'Both' : finalVerts[0],
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err: any) {
+      alert("Failed to update verticals: " + (err.message || err));
+    }
+  };
+
   const handleCreateRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail.trim() || !newName.trim()) return;
@@ -125,7 +146,31 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
     const cleanRvce = newRvceEmail.trim() ? normalizeEmail(newRvceEmail) : '';
     const regRef = getDocRef('registrations', cleanEmail);
 
-    const verts: LakshyaVertical[] = newVertical === 'Both' ? ['Air Rifle', 'Air Pistol'] : [newVertical];
+    const existingShooter = registrations.find(
+      (r) => r.email.toLowerCase() === cleanEmail || r.id.toLowerCase() === cleanEmail
+    );
+    const combinedVerts = new Set<LakshyaVertical>();
+    if (existingShooter) {
+      if (Array.isArray(existingShooter.verticals) && existingShooter.verticals.length > 0) {
+        existingShooter.verticals.forEach((v) => combinedVerts.add(v));
+      } else if (existingShooter.vertical === 'Both') {
+        combinedVerts.add('Air Rifle');
+        combinedVerts.add('Air Pistol');
+      } else if (existingShooter.vertical) {
+        combinedVerts.add(existingShooter.vertical as LakshyaVertical);
+      }
+    }
+
+    if (newVertical === 'Both') {
+      combinedVerts.add('Air Rifle');
+      combinedVerts.add('Air Pistol');
+    } else {
+      combinedVerts.add(newVertical);
+    }
+
+    const verts: LakshyaVertical[] = Array.from(combinedVerts);
+    const resolvedVertical: 'Air Rifle' | 'Air Pistol' | 'Both' =
+      verts.length > 1 ? 'Both' : (verts[0] || 'Air Rifle');
 
     const regData: Partial<Registration> = {
       id: cleanEmail,
@@ -136,12 +181,12 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
       branch: newBranch.trim().toUpperCase() || '',
       yearOfStudy: newYear || '1st Year',
       gender: newGender,
-      vertical: newVertical,
+      vertical: resolvedVertical,
       verticals: verts,
       college: 'RVCE',
       source: 'manual',
       eligible: true,
-      registeredAt: serverTimestamp(),
+      registeredAt: existingShooter?.registeredAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
@@ -300,11 +345,25 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
       const branch = parts[7] ? parts[7].toUpperCase() : '';
       const yearOfStudy = parts[8] || '';
 
-      // Column 9: Preferred Shooting Category (Air Rifle, Air Pistol)
-      const categoryRaw = (parts[9] || '').toLowerCase();
+      // Locate Category / Vertical from parts[9] or by searching all columns
+      let categoryRaw = (parts[9] || '').toLowerCase();
+      if (!categoryRaw.includes('pistol') && !categoryRaw.includes('rifle') && !categoryRaw.includes('both')) {
+        const foundPart = parts.find((p) => {
+          const l = p.toLowerCase();
+          return l.includes('pistol') || l.includes('rifle') || l.includes('both');
+        });
+        if (foundPart) {
+          categoryRaw = foundPart.toLowerCase();
+        }
+      }
+
       const detectedVerticals: LakshyaVertical[] = [];
       if (categoryRaw.includes('pistol')) detectedVerticals.push('Air Pistol');
       if (categoryRaw.includes('rifle')) detectedVerticals.push('Air Rifle');
+      if (categoryRaw.includes('both')) {
+        if (!detectedVerticals.includes('Air Rifle')) detectedVerticals.push('Air Rifle');
+        if (!detectedVerticals.includes('Air Pistol')) detectedVerticals.push('Air Pistol');
+      }
       if (detectedVerticals.length === 0) detectedVerticals.push('Air Rifle');
 
       const existing = shooterMap.get(primaryEmail);
@@ -319,8 +378,11 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
         const dbShooter = registrations.find((r) => r.email.toLowerCase() === primaryEmail);
         const initialVerts = new Set<LakshyaVertical>(detectedVerticals);
         if (dbShooter) {
-          if (Array.isArray(dbShooter.verticals)) {
+          if (Array.isArray(dbShooter.verticals) && dbShooter.verticals.length > 0) {
             dbShooter.verticals.forEach((v) => initialVerts.add(v));
+          } else if (dbShooter.vertical === 'Both') {
+            initialVerts.add('Air Rifle');
+            initialVerts.add('Air Pistol');
           } else if (dbShooter.vertical === 'Air Rifle' || dbShooter.vertical === 'Air Pistol') {
             initialVerts.add(dbShooter.vertical as LakshyaVertical);
           }
@@ -528,18 +590,46 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                         <div className="space-y-1.5">
                           {/* Registered Discipline Badge */}
                           <div>
-                            {Array.isArray(reg.verticals) && reg.verticals.length > 1 ? (
-                              <span className="text-[10px] px-2 py-0.5 bg-purple-950/70 text-purple-300 border border-purple-800 font-bold">
-                                DUAL: RIFLE + PISTOL
-                              </span>
+                            {(Array.isArray(reg.verticals) && reg.verticals.length > 1) || reg.vertical === 'Both' ? (
+                              <div className="flex flex-wrap items-center gap-1">
+                                <span className="text-[10px] px-2 py-0.5 bg-sky-950/70 text-sky-300 border border-sky-800 font-bold">
+                                  AIR RIFLE
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 bg-amber-950/70 text-amber-300 border border-amber-800 font-bold">
+                                  AIR PISTOL
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 bg-purple-950/80 text-purple-300 border border-purple-700 font-bold">
+                                  DUAL (2 SLOTS)
+                                </span>
+                              </div>
                             ) : reg.vertical === 'Air Pistol' || (reg.verticals && reg.verticals.includes('Air Pistol')) ? (
-                              <span className="text-[10px] px-2 py-0.5 bg-amber-950/70 text-amber-300 border border-amber-800 font-bold">
-                                REG: AIR PISTOL
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] px-2 py-0.5 bg-amber-950/70 text-amber-300 border border-amber-800 font-bold">
+                                  REG: AIR PISTOL
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddVertical(reg, 'Air Rifle')}
+                                  className="text-[9px] px-1.5 py-0.5 bg-[#1A1C26] hover:bg-sky-950/70 text-sky-400 border border-sky-800/60 rounded flex items-center gap-0.5"
+                                  title="Add Air Rifle to this participant so they can book 2 slots"
+                                >
+                                  + Allow Rifle (2 Slots)
+                                </button>
+                              </div>
                             ) : (
-                              <span className="text-[10px] px-2 py-0.5 bg-sky-950/70 text-sky-300 border border-sky-800 font-bold">
-                                REG: AIR RIFLE
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] px-2 py-0.5 bg-sky-950/70 text-sky-300 border border-sky-800 font-bold">
+                                  REG: AIR RIFLE
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddVertical(reg, 'Air Pistol')}
+                                  className="text-[9px] px-1.5 py-0.5 bg-[#1A1C26] hover:bg-amber-950/70 text-amber-400 border border-amber-800/60 rounded flex items-center gap-0.5"
+                                  title="Add Air Pistol to this participant so they can book 2 slots"
+                                >
+                                  + Allow Pistol (2 Slots)
+                                </button>
+                              </div>
                             )}
                           </div>
 

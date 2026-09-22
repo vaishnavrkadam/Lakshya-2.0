@@ -39,15 +39,15 @@ export default function Header({ currentView, setView }: HeaderProps) {
   return (
     <header className="sticky top-0 left-0 w-full z-50 bg-[#0B0C10] border-b border-[#282B3A]/80 shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="h-20 flex items-center justify-between gap-2 lg:gap-4">
+        <div className="h-20 flex items-center justify-between gap-2 lg:gap-4 relative">
           
-          {/* LEFT GROUP: RVCE Logo + Text + Divider + Left Nav Items */}
-          <div className="flex items-center gap-3 xl:gap-5 min-w-0">
-            {/* RVCE Logo & Title */}
+          {/* LEFT GROUP: RVCE Logo + Divider + Left Nav Items (HOME, SLOT ALLOCATION) */}
+          <div className="flex items-center gap-3 xl:gap-5 min-w-0 pr-4">
+            {/* RVCE Logo */}
             <button
               onClick={() => handleNavClick('overview')}
-              className="flex items-center gap-2.5 text-left shrink-0 group focus:outline-none"
-              title="RV College of Engineering, Bengaluru"
+              className="flex items-center gap-2 text-left shrink-0 group focus:outline-none"
+              title="RV College of Engineering"
             >
               <img 
                 src="/assets/logos/RVCE Logo.png" 
@@ -61,7 +61,6 @@ export default function Header({ currentView, setView }: HeaderProps) {
 
             {/* Left Nav: HOME, SLOT ALLOCATION */}
             <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
-              {/* HOME (Active styling: rounded border button with red outline) */}
               <button
                 onClick={() => handleNavClick('overview')}
                 className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
@@ -86,8 +85,8 @@ export default function Header({ currentView, setView }: HeaderProps) {
             </nav>
           </div>
 
-          {/* CENTER GROUP: GARE Logo */}
-          <div className="flex items-center justify-center shrink-0 px-3 sm:px-6">
+          {/* CENTER GROUP: GARE Logo (Centered in Navbar) */}
+          <div className="flex items-center justify-center shrink-0 px-2 sm:px-4 z-10">
             <button
               onClick={() => handleNavClick('overview')}
               className="flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
@@ -101,8 +100,8 @@ export default function Header({ currentView, setView }: HeaderProps) {
             </button>
           </div>
 
-          {/* RIGHT GROUP: Right Nav Items + Divider + NCC Logo + Register Now + Sign In */}
-          <div className="flex items-center gap-2 xl:gap-3.5 shrink-0">
+          {/* RIGHT GROUP: Right Nav Items (PARTICIPANT PASS, LEADERBOARD, PROFILE) + Divider + NCC Logo + Register Now + Sign In */}
+          <div className="flex items-center gap-2 xl:gap-3.5 shrink-0 pl-2">
             {/* Right Nav: PARTICIPANT PASS, LEADERBOARD, PROFILE */}
             <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 shrink-0">
               <button

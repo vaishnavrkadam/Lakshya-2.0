@@ -6,10 +6,11 @@ import {
   Trophy, 
   Crosshair, 
   ArrowDown, 
-  Maximize2,
   ChevronRight, 
   ChevronLeft,
   X,
+  Eye,
+  ShieldCheck,
   Phone,
   Mail,
   HelpCircle
@@ -18,221 +19,171 @@ import {
 interface WeaponSpec {
   id: string;
   name: string;
-  subtitle: string;
-  sponsor: string;
-  type: 'Air Rifle' | 'Air Pistol';
-  caliber: string;
-  velocity: string;
-  cylinderPressure: string;
-  barrelLength: string;
-  weight: string;
-  trigger: string;
-  sights: string;
+  manufacturer: string;
+  category: '10m Competition Rifle' | '10m Competition Pistol';
+  calibre: string;
+  barrelLength?: string;
+  weight?: string;
+  velocity?: string;
   description: string;
-  features: string[];
   imageSrc: string;
 }
 
-const SPONSOR_WEAPONS: WeaponSpec[] = [
+const WEAPONS_DATA: WeaponSpec[] = [
   {
-    id: 'gandiva-pcp-match',
-    name: 'Gandiva Match Pro X1',
-    subtitle: 'Olympic Precision 10m Competition PCP',
-    sponsor: 'Gandiva Aero-pneumatic Research and Equipments Pvt Ltd',
-    type: 'Air Rifle',
-    caliber: '.177 (4.5mm) Match Grade Flathead',
-    velocity: '175 m/s (575 fps) Regulated Consistency',
-    cylinderPressure: '300 Bar Ultra-High Pressure Carbon Tank',
-    barrelLength: '450 mm Match Choked Lothar Walther',
-    weight: '4.2 kg Balanced Match Weight',
-    trigger: 'Two-Stage Fully Adjustable Match Blade (50g–100g)',
-    sights: 'Precision 20-Click Micro-Diopter with Anti-Glare Iris',
-    description: 'Developed by Gandiva Aero-pneumatic Research and Equipments Pvt Ltd (GARE), the Gandiva Match Pro X1 represents cutting-edge domestic aero-pneumatic engineering engineered specifically for ISSF 10m target competitions.',
-    features: [
-      'In-line pneumatic regulator with <0.8% velocity variance',
-      'Anodized aerospace aluminum chassis with fully articulated cheekpiece',
-      'Dry-fire training mechanism with zero hammer wear',
-      'Counter-balanced recoil compensator for zero muzzle rise'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7YfMWFIBEEi_mjbxFAttfDm8j8x6FKwhMPoNQI_W5uEwcoYD3RGBhjZJ9yw9SvKOMAdjhJo61nPK8aWA9X5a-c1X0sRYp9RyojZ8FAFwVEuMGKVVHoU458tSIRshuqfuPnCUSPo_WxrsTOacaWpkY3KNYejtGSz8wSX_GWdKECsnIbAsCfE-oKK10BRXzO10hqpu-ZuGqqRBN2KEQ6jBrGstkdQ1TYYXxMtwjB7ed-MXs9BN8GEK7'
+    id: 'falcon',
+    name: 'FALCON',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '450 mm',
+    weight: '4.2 kg',
+    velocity: '170 m/s',
+    description: 'Flagship 10m match air rifle engineered by GARE with precision regulator consistency for ISSF target events.',
+    imageSrc: '/assets/weapons/falcon.png',
   },
   {
-    id: 'achilles-x3',
-    name: 'Achilles X3 Match PCP',
-    subtitle: 'Championship Precision Match Rifle',
-    sponsor: 'Precihole Sports',
-    type: 'Air Rifle',
-    caliber: '.177 (4.5mm) Competition Pellets',
-    velocity: '180 m/s Regulated',
-    cylinderPressure: '200 Bar Quick-Fill Pneumatic',
-    barrelLength: '480 mm Precision Rifle Barrel',
-    weight: '3.9 kg Match Stock',
-    trigger: 'Precision Match 2-Stage Blade',
-    sights: 'Tunnel Front Sight & Match Rear Aperture',
-    description: 'A battle-tested 10-meter precision match rifle built for collegiate and national shooters requiring razor-thin grouping on regulation concentric rings.',
-    features: [
-      'Precision steel shroud with built-in air stripper',
-      'Adjustable butt plate with vertical and tilt correction',
-      'Ambidextrous match grip with stippled palm swell'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDzFg3tQRHB7cudLZizC8trgWsot1b20hBrqKhBB1lQci07Qvxee2yixHvBSVBb15Lv6yJeSwhZHDbz3S6wWiZckd6GeszAN6oLYwvS0RLhtg26WF_GL2JCLzyK_sYB12rlqazOWLPZEMC1gY1oyEwuPhXU7GijVAcsyVpvwN13RBa1rKQwhrv_y9QAH_FpWtCoxmMikjsSxQn3nIS9EzeYUlRJmr7QAPH77AVkMgLrybjEg8E3H4Kj'
+    id: 'falcon-walnut',
+    name: 'FALCON WALNUT STOCK',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '450 mm',
+    weight: '4.3 kg',
+    velocity: '170 m/s',
+    description: 'Special edition 10m competition rifle equipped with a solid walnut stock for enhanced ergonomics and weight distribution.',
+    imageSrc: '/assets/weapons/falcon-walnut.png',
   },
   {
-    id: 'minotaur-px120',
-    name: 'PX120 Minotaur Tactical',
-    subtitle: 'Tactical Bullpup Pneumatic Design',
-    sponsor: 'Gandiva & Precihole Collaborative Display',
-    type: 'Air Rifle',
-    caliber: '.177 (4.5mm) High Ballistic Coefficient',
-    velocity: '240 m/s Tactical Velocity',
-    cylinderPressure: '250 Bar Titanium Cylinder',
-    barrelLength: '520 mm Shrouded Barrel',
-    weight: '3.6 kg Compact Tactical Format',
-    trigger: 'Crisp Single-Stage Tactical Clean Break',
-    sights: 'Picatinny Rail for Optical & Diopter Systems',
-    description: 'Compact bullpup architecture shifting center of mass directly into the shooter’s shoulder pocket for superior stability and rapid stance transitions.',
-    features: [
-      'Bullpup forward linkage with zero trigger creep',
-      'Integral suppressor baffle array for quiet discharge',
-      'Side-lever biathlon-style cocking mechanism'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWtehKwhFga6uil6TEh6FH3hrpGlV1tdzZSLliAZMFtx93v9zlpydgE_AycK8i971gr6_pswnGCPCAGaSr-jLB90DIXTdAG1HjDT4Bc9uAQmxK9unGrC4hEo153CpTj9nQHbcChcvdND-vQDZz4r3YsKxv9rG7KQMP5KQViyd8smnG520GO0AoFjzmH24T1XA_n4QkHhUgBFWTcosk7Oab-T2C27k8vDa5eWHAunsj_WK46qSN6vr9'
+    id: 'falcon-beechwood',
+    name: 'FALCON BEECH WOOD STOCK',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '450 mm',
+    weight: '4.3 kg',
+    velocity: '170 m/s',
+    description: 'ISSF-compliant 10m competition air rifle featuring a durable beech wood stock for steady stance control.',
+    imageSrc: '/assets/weapons/falcon-beechwood.png',
   },
   {
-    id: 'pp75-champion',
-    name: 'PP75 Champion 10m',
-    subtitle: 'Elite Single-Handed 10m Match Pistol',
-    sponsor: 'Precihole Sports',
-    type: 'Air Pistol',
-    caliber: '.177 (4.5mm) Match Pellets',
-    velocity: '150 m/s Regulated Match Velocity',
-    cylinderPressure: '200 Bar Detachable Front Cylinder with Pressure Gauge',
-    barrelLength: '240 mm Polygon Rifled Match Tube',
-    weight: '980 grams ISSF Legal Match Weight',
-    trigger: 'Ball-Bearing Supported 500g Regulation Trigger',
-    sights: 'Micro-Click Elevation and Windage Rear Notch',
-    description: 'The standard of competitive 10-meter air pistol shooting. Designed for uncompromised one-handed balance, micro recoil absorption, and razor sight picture stability.',
-    features: [
-      'Anatomical walnut grip with adjustable palm rest shelf',
-      'Low bore axis directly aligned with wrist tendon',
-      'Air stabilizer porting exhausting gas upward to counter muzzle jump'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC2YxHqBWwye5JH3F1CUO5idebOBAd7Dm_SfN9nVR_CYm61oZftUd2XENOOHZKI-r7nrJehJ4sejJhBKW80wdb-4o4OoEFRgn4_-Fs2FCvFVTBOZOOw3YWm9af_FOAiECRRTtbhIRbYbXqDbhLSJrg8rJ5V7w8QLgQUkDi0BFhkqWWJYwwHJ-MgmxNbj8a2jPLJOMa_PHvnCNbI7B-YLxe3HfnGMeXn5ntimNCZv_dg5WAd_DqXYDMW'
+    id: 'bhim',
+    name: 'BHIM',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    weight: '4.5 kg',
+    velocity: '175 m/s',
+    description: 'High-rigidity 10m match air rifle designed for collegiate and national target competition.',
+    imageSrc: '/assets/weapons/bhim.png',
   },
   {
-    id: 'benchrest-special',
-    name: 'Benchrest Special Extreme',
-    subtitle: 'Sub-MOA Precision Bench Rest System',
-    sponsor: 'Gandiva Aero-pneumatic Research and Equipments Pvt Ltd',
-    type: 'Air Rifle',
-    caliber: '.177 (4.5mm) Selected Match Lots',
-    velocity: '190 m/s Flat Trajectory',
-    cylinderPressure: '300 Bar Extended Capacity Reservoir',
-    barrelLength: '550 mm Heavy Match Profile',
-    weight: '4.8 kg Heavy Bench Platform',
-    trigger: 'Ultralight Match Trigger (< 30 grams)',
-    sights: 'Benchrest Optical Rail & High Precision Reticle Mounts',
-    description: 'Engineered for extreme sub-millimeter group sizes at 10 to 25 meters, featuring a heavy harmonic resonance barrel collar and flat benchrest fore-end.',
-    features: [
-      'Wide flat aluminum fore-end for zero torque on mechanical rests',
-      'Precision regulated air metering chamber',
-      'Hand-lapped crown with 11-degree target bevel'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDgO0ynpqlBonf0HHTJ_gcxKN8h4fMOmRPCq0T5fbPGp9Vy1rwYYMU389uEXYzrEYOB0DUURooxyXbBbUrl3rogW92BF40cgcaIgOljFnqptzPJ3HcwLgTjyPpAWeknULo0B1Uw6de9TqCFONeMFDdiEbkt80GYYXozhEcb7lDW6ienhVslFhfGjU0AUmmJ0BMxAti-fXl7zRgsQSFK1Nh0JgjH10nXDty-T0T67p74Pc6eEcoe5Dfd'
+    id: 'theseus',
+    name: 'THESEUS',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    weight: '4.0 kg',
+    description: 'Lightweight 10m competition rifle featuring refined balance and smooth pneumatic trigger break.',
+    imageSrc: '/assets/weapons/theseus.png',
   },
   {
-    id: 'pp55-match-pro',
-    name: 'PP55 Match Pro Junior',
-    subtitle: 'Match Precision Pistol',
-    sponsor: 'Precihole Sports',
-    type: 'Air Pistol',
-    caliber: '.177 (4.5mm) Diabolo Pellets',
-    velocity: '145 m/s Controlled Velocity',
-    cylinderPressure: '200 Bar Pneumatic Reservoir',
-    barrelLength: '210 mm Precision Barrel',
-    weight: '850 grams Lightweight Match Frame',
-    trigger: 'Adjustable Two-Stage Match Trigger',
-    sights: 'Contrasting Target Notch Sight',
-    description: 'Specially engineered for competitive shooters developing grip posture, breathing rhythm, and sight alignment without premature wrist muscle fatigue.',
-    features: [
-      'Modular grip inserts accommodating various hand sizes',
-      'Smooth stroke cocking arm with low effort cycle',
-      'Regulation ISSF minimum trigger weight compliance'
-    ],
-    imageSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXfcHTnPlL-zU2nQrBVz8IpOtwlNKSB8uLB2OlzZ7EG315-Xml8U7Zz_UzoyUWozXemR1ZLc9Dz3YmQ_scsVyz8RoAXIUs1iiwGcJ2yq67c-PYkSpjFo5w23s1fbcvxV3maUBdhlM5rZZ3L0-farO_NMsx7Uo_0_UUjyWFewXcOoTvT4sTzdSzqqsBEv7Wd3s4mt5R0ONSC-h6x-9sIbjWNRURYi7P_sjUx4_Odj5as2hyec_7tu8U'
-  }
+    id: 'gm10-karbin',
+    name: 'GM10 KARBIN',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '450 mm',
+    weight: '3.8 kg',
+    velocity: '170 m/s',
+    description: 'Compact carbine-format 10m competition air rifle providing rapid aim recovery and steady handling.',
+    imageSrc: '/assets/weapons/gm10-karbin.png',
+  },
+  {
+    id: 'viper',
+    name: 'VIPER',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    weight: '3.9 kg',
+    velocity: '175 m/s',
+    description: 'Performance 10m match air rifle featuring an aggressive stock profile for tight target groupings.',
+    imageSrc: '/assets/weapons/viper.png',
+  },
+  {
+    id: 'gm10-club',
+    name: 'GM10 CLUB',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '450 mm',
+    weight: '3.6 kg',
+    velocity: '170 m/s',
+    description: 'Entry match 10m target air rifle tailored for developing shooters entering formal competition.',
+    imageSrc: '/assets/weapons/gm10-club.png',
+  },
+  {
+    id: 'ap-x',
+    name: 'AP-X',
+    manufacturer: 'GARE',
+    category: '10m Competition Pistol',
+    calibre: '.177 / 4.5mm',
+    barrelLength: '230 mm',
+    weight: '0.95 kg',
+    velocity: '150 m/s',
+    description: 'ISSF-legal 10m match air pistol engineered for one-handed balance, micro recoil absorption, and razor sight stability.',
+    imageSrc: '/assets/weapons/ap-x.png',
+  },
 ];
 
 export default function Overview({ setView }: { setView: (v: string) => void }) {
   const { currentUser, registration, loginWithGoogle, setOnboardingOpen } = useAuth();
+  // Carousel State
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponSpec | null>(null);
+  const thumbnailScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Gallery slider state (Single-Card Stack Display)
-  const [activeIdx, setActiveIdx] = useState<number>(0);
-  const [dragOffset, setDragOffset] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const dragStartRef = useRef<number>(0);
+  const activeWeapon = WEAPONS_DATA[activeIndex];
+
+  // Auto-slide carousel every 6 seconds when modal is not open
+  useEffect(() => {
+    if (selectedWeapon !== null) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % WEAPONS_DATA.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [selectedWeapon, activeIndex]);
+
+  // Lock body scroll when weapon modal is active
+  useEffect(() => {
+    if (selectedWeapon) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedWeapon]);
 
   const handleNext = () => {
-    setActiveIdx((prev) => (prev + 1) % SPONSOR_WEAPONS.length);
+    setActiveIndex((prev) => (prev + 1) % WEAPONS_DATA.length);
   };
 
   const handlePrev = () => {
-    setActiveIdx((prev) => (prev - 1 + SPONSOR_WEAPONS.length) % SPONSOR_WEAPONS.length);
+    setActiveIndex((prev) => (prev - 1 + WEAPONS_DATA.length) % WEAPONS_DATA.length);
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedWeapon) return;
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === 'ArrowLeft') handlePrev();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedWeapon]);
-
-  // Touch gesture handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    dragStartRef.current = e.touches[0].clientX;
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const currentX = e.touches[0].clientX;
-    setDragOffset(currentX - dragStartRef.current);
-  };
-
-  const handleTouchEnd = () => {
-    if (dragOffset > 70) {
-      handlePrev();
-    } else if (dragOffset < -70) {
-      handleNext();
+  const scrollThumbnailsLeft = () => {
+    if (thumbnailScrollRef.current) {
+      thumbnailScrollRef.current.scrollBy({ left: -240, behavior: 'smooth' });
     }
-    setDragOffset(0);
-    setIsDragging(false);
   };
 
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    dragStartRef.current = e.clientX;
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setDragOffset(e.clientX - dragStartRef.current);
-  };
-
-  const handleMouseUp = () => {
-    if (dragOffset > 70) {
-      handlePrev();
-    } else if (dragOffset < -70) {
-      handleNext();
+  const scrollThumbnailsRight = () => {
+    if (thumbnailScrollRef.current) {
+      thumbnailScrollRef.current.scrollBy({ left: 240, behavior: 'smooth' });
     }
-    setDragOffset(0);
-    setIsDragging(false);
   };
 
   // 1. Slot Booking CTA Handler
@@ -259,8 +210,6 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
   const handleLeaderboardCta = () => {
     setView('live-leaderboard');
   };
-
-  const currentWeapon = SPONSOR_WEAPONS[activeIdx];
 
   return (
     <div className="bg-[#0B0C10] text-[#E0E0E0] min-h-screen">
@@ -376,267 +325,337 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
         </div>
       </section>
 
-      {/* GALLERY DISPLAY: Single Weapon Card Showcase with Interactive Slide */}
+      {/* FEATURED WEAPON SHOWCASE SECTION (MATCHING REFERENCE MOCKUP) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8 select-none">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#222329] pb-6">
+        
+        {/* Section Title Header (Matching Mockup) */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#222329] pb-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#E51A1A]">
-              <Crosshair className="w-4 h-4" />
-              <span>OFFICIAL MATCH ARMORY & EQUIPMENT</span>
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#E51A1A] mb-1">
+              <span className="w-2 h-2 rounded-full bg-[#E51A1A] animate-pulse"></span>
+              <span>OFFICIAL COMPETITION WEAPONS</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight mt-1 font-sans">
-              Sponsor Weapons Gallery
+            <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tight font-sans">
+              GARE <span className="text-[#E51A1A]">WEAPONS</span>
             </h2>
+            <div className="text-xs font-mono text-[#787A8C] tracking-[0.25em] uppercase mt-1">
+              PRECISION / PERFORMANCE / TRUSTED BY CHAMPIONS
+            </div>
           </div>
-          <p className="text-xs font-mono text-[#888892] max-w-md md:text-right">
-            Swipe or use controls to inspect models · Click active weapon to open full ballistic specifications.
-          </p>
+
+          {/* GARE Logo Branding Block (Top Right in Mockup) */}
+          <div className="flex items-center gap-3 bg-[#11121B] px-5 py-2.5 rounded-xl border border-[#252638] shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#E51A1A]/10 flex items-center justify-center border border-[#E51A1A]/30">
+              <Target className="w-5 h-5 text-[#E51A1A]" />
+            </div>
+            <div>
+              <div className="text-sm font-black tracking-wider text-white flex items-center gap-1 font-sans">
+                <span className="text-[#E51A1A]">GARE</span>
+              </div>
+              <div className="text-[9px] font-mono text-[#8E909E] tracking-tight uppercase">
+                PRECISION IN EVERY SHOT
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Tactical Telemetry & Index Counter Bar */}
-        <div className="flex items-center justify-between font-mono text-xs text-[#888892] px-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#E51A1A] animate-pulse"></span>
-            <span className="text-white font-bold tracking-widest uppercase">
-              MODEL {String(activeIdx + 1).padStart(2, '0')} / {String(SPONSOR_WEAPONS.length).padStart(2, '0')}
-            </span>
-            <span className="text-[#555666]">|</span>
-            <span className="text-[#E51A1A] font-semibold">{currentWeapon.type}</span>
-          </div>
+        {/* MAIN SHOWCASE CONTAINER (MATCHING MOCKUP FRAME) */}
+        <div className="relative bg-[#0E0F16] border border-[#E51A1A]/40 rounded-2xl p-4 sm:p-8 shadow-[0_0_35px_rgba(229,26,26,0.12)] transition-all duration-300">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[440px]" key={activeWeapon.id}>
+            
+            {/* LEFT SIDE: WEAPON DISPLAY BOX WITH RED AMBIENT SPOTLIGHT GLOW */}
+            <div className="lg:col-span-7 relative bg-[#07080D] rounded-xl border border-[#1A1C2A] p-6 sm:p-10 flex items-center justify-center min-h-[280px] sm:min-h-[360px] overflow-hidden group">
+              
+              {/* Red Floor Ambient Spotlight Glow (Matching Mockup) */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4/5 h-32 bg-[#E51A1A]/20 blur-2xl rounded-full pointer-events-none"></div>
 
-          <div className="hidden sm:flex items-center gap-1.5">
-            {SPONSOR_WEAPONS.map((_, i) => (
+              {/* Watermark at bottom right of image container */}
+              <div className="absolute bottom-3 right-4 font-black font-sans text-xl text-white/5 uppercase tracking-widest pointer-events-none">
+                GARE
+              </div>
+
+              {/* Left Arrow Button (Inside Image Box) */}
               <button
-                key={i}
-                onClick={() => setActiveIdx(i)}
-                className={`h-1.5 transition-all rounded-full ${
-                  i === activeIdx ? 'w-8 bg-[#E51A1A]' : 'w-2 bg-[#2D2E3B] hover:bg-[#555666]'
-                }`}
-                title={`Go to model ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
+                onClick={handlePrev}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#141520]/80 border border-[#2D2E42] text-white flex items-center justify-center hover:bg-[#E51A1A] hover:border-[#E51A1A] transition-all z-20 shadow-lg active:scale-95"
+                title="Previous Weapon"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
 
-        {/* Gallery Interactive Viewport (Single Card Stack with Drag/Swipe Animation) */}
-        <div className="relative max-w-3xl mx-auto my-4">
-          {/* Background Card Preview (giving stacked 3D depth) */}
-          <div className="absolute inset-0 max-w-2xl mx-auto scale-[0.94] translate-y-4 bg-[#0E0F14] border border-[#222329] rounded-2xl opacity-40 blur-[0.5px] pointer-events-none hidden sm:block"></div>
-
-          {/* Active Front Card */}
-          <div
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={() => {
-              if (isDragging) {
-                handleMouseUp();
-              }
-            }}
-            onClick={() => {
-              if (Math.abs(dragOffset) < 10) {
-                setSelectedWeapon(currentWeapon);
-              }
-            }}
-            style={{
-              transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)`,
-              transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)',
-            }}
-            className="relative bg-[#14151C] border border-[#282B3A] hover:border-[#DC2626] rounded-2xl overflow-hidden shadow-2xl cursor-pointer group transition-colors"
-          >
-            {/* Visual Header Strip */}
-            <div className="px-6 py-4 bg-[#0E0F14] border-b border-[#222329] flex items-center justify-between">
-              <span className="px-2.5 py-1 bg-[#E51A1A]/15 text-[#E51A1A] font-mono text-[10px] font-bold uppercase tracking-wider rounded">
-                {currentWeapon.sponsor.includes('Gandiva') ? 'GARE SERIES' : 'PRECIHOLE MATCH'}
-              </span>
-              <span className="font-mono text-xs text-[#888892] flex items-center gap-1.5">
-                <Maximize2 className="w-3.5 h-3.5 text-[#E51A1A]" />
-                <span className="hidden sm:inline">Click for Specs</span>
-              </span>
-            </div>
-
-            {/* High-Resolution Weapon Image Profile */}
-            <div className="h-64 sm:h-80 bg-[#090A0E] flex items-center justify-center p-6 relative overflow-hidden">
+              {/* Featured Weapon Image */}
               <img
-                src={currentWeapon.imageSrc}
-                alt={currentWeapon.name}
-                className="max-h-full max-w-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-500"
+                src={activeWeapon.imageSrc}
+                alt={activeWeapon.name}
+                className="max-h-[250px] sm:max-h-[320px] max-w-full object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] transform group-hover:scale-105 transition-transform duration-500 ease-out z-10"
               />
 
-              <div className="absolute top-4 left-4 font-mono text-[10px] text-[#666677] uppercase tracking-widest">
-                PRECISION TARGET ARCHITECTURE
-              </div>
+              {/* Right Arrow Button (Inside Image Box) */}
+              <button
+                onClick={handleNext}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#141520]/80 border border-[#2D2E42] text-white flex items-center justify-center hover:bg-[#E51A1A] hover:border-[#E51A1A] transition-all z-20 shadow-lg active:scale-95"
+                title="Next Weapon"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
 
-              <div className="absolute bottom-3 right-4 px-3 py-1 bg-[#0B0C10]/90 border border-[#2D2E3B] text-[10px] font-mono text-[#E51A1A] font-bold uppercase tracking-wider rounded">
-                [ Click Card to Inspect ]
+              {/* Carousel Pagination Dots Centered At Bottom Of Image Container */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+                {WEAPONS_DATA.map((w, idx) => (
+                  <button
+                    key={w.id}
+                    onClick={() => setActiveIndex(idx)}
+                    className={`h-2 transition-all rounded-full ${
+                      idx === activeIndex
+                        ? 'w-6 bg-[#E51A1A] shadow-[0_0_8px_#E51A1A]'
+                        : 'w-2 bg-[#282B3A] hover:bg-[#55586A]'
+                    }`}
+                    title={`Go to ${w.name}`}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Card Information Body */}
-            <div className="p-6 sm:p-8 space-y-4">
-              <div>
-                <span className="font-mono text-xs text-[#E51A1A] uppercase tracking-wider block font-bold">
-                  {currentWeapon.subtitle}
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-0.5 font-sans">
-                  {currentWeapon.name}
+            {/* RIGHT SIDE: WEAPON DETAILS (MATCHING MOCKUP SPECIFICATIONS GRID) */}
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
+              
+              {/* Brand Title & Weapon Name */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#E51A1A] font-bold text-xs font-mono uppercase tracking-widest">
+                  <Target className="w-4 h-4" />
+                  <span>GARE</span>
+                </div>
+
+                <h3 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight font-sans">
+                  {activeWeapon.name}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#888892] mt-1 leading-relaxed">
-                  {currentWeapon.description}
-                </p>
+
+                <div className="text-xs font-mono text-[#A0A2B0]">
+                  {activeWeapon.category}
+                </div>
+
+                {/* Thin Red Accent Divider */}
+                <div className="w-12 h-0.5 bg-[#E51A1A] mt-2"></div>
               </div>
 
-              {/* Technical Specifications Matrix */}
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#222329] font-mono text-xs">
-                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
-                  <span className="block text-[9px] text-[#666675] uppercase">CALIBER</span>
-                  <span className="text-white font-bold">{currentWeapon.caliber.split(' ')[0]}</span>
+              {/* Specifications Grid (4 Tiles with Circular Icons - Matching Mockup) */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Spec 1: Calibre */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#141520] border border-[#2B2C40] flex items-center justify-center shrink-0 text-[#E51A1A]">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div className="font-mono text-xs">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Calibre</span>
+                    <span className="font-bold text-white text-sm">{activeWeapon.calibre}</span>
+                  </div>
                 </div>
-                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
-                  <span className="block text-[9px] text-[#666675] uppercase">VELOCITY</span>
-                  <span className="text-white font-bold">{currentWeapon.velocity.split(' ')[0]} m/s</span>
+
+                {/* Spec 2: Barrel Length */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#141520] border border-[#2B2C40] flex items-center justify-center shrink-0 text-[#E51A1A]">
+                    <Crosshair className="w-5 h-5" />
+                  </div>
+                  <div className="font-mono text-xs">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Barrel Length</span>
+                    <span className="font-bold text-white text-sm">{activeWeapon.barrelLength || '450 mm'}</span>
+                  </div>
                 </div>
-                <div className="bg-[#0B0C10] p-2.5 rounded border border-[#222329]">
-                  <span className="block text-[9px] text-[#666675] uppercase">PRESSURE</span>
-                  <span className="text-white font-bold">{currentWeapon.cylinderPressure.split(' ')[0]} Bar</span>
+
+                {/* Spec 3: Weight */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#141520] border border-[#2B2C40] flex items-center justify-center shrink-0 text-[#E51A1A]">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="font-mono text-xs">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Weight</span>
+                    <span className="font-bold text-white text-sm">{activeWeapon.weight || '4.2 kg'}</span>
+                  </div>
+                </div>
+
+                {/* Spec 4: Velocity */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#141520] border border-[#2B2C40] flex items-center justify-center shrink-0 text-[#E51A1A]">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div className="font-mono text-xs">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Velocity</span>
+                    <span className="font-bold text-white text-sm">{activeWeapon.velocity || '170 m/s'}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* View Details Button (Matching Mockup Pill Style) */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setSelectedWeapon(activeWeapon)}
+                  className="w-full sm:w-auto px-8 py-3 bg-[#11121A] hover:bg-[#E51A1A] text-white border border-[#E51A1A]/70 hover:border-[#E51A1A] text-xs font-mono font-bold tracking-widest uppercase rounded-full flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-[0_0_15px_rgba(229,26,26,0.2)]"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>VIEW DETAILS</span>
+                </button>
+              </div>
+
             </div>
-          </div>
 
-          {/* Left & Right Tactical Slider Navigation Controls */}
-          <div className="flex items-center justify-between mt-6">
-            <button
-              onClick={handlePrev}
-              className="px-5 py-2.5 bg-[#14151C] hover:bg-[#E51A1A] border border-[#282B3A] text-white font-mono text-xs uppercase tracking-wider font-bold rounded-lg flex items-center gap-2 transition-all shadow-md group"
-            >
-              <ChevronLeft className="w-4 h-4 text-[#E51A1A] group-hover:text-white" />
-              <span>Previous</span>
-            </button>
-
-            <span className="text-xs font-mono text-[#666675] hidden sm:block">
-              Drag or use arrow keys to navigate
-            </span>
-
-            <button
-              onClick={handleNext}
-              className="px-5 py-2.5 bg-[#14151C] hover:bg-[#E51A1A] border border-[#282B3A] text-white font-mono text-xs uppercase tracking-wider font-bold rounded-lg flex items-center gap-2 transition-all shadow-md group"
-            >
-              <span>Next</span>
-              <ChevronRight className="w-4 h-4 text-[#E51A1A] group-hover:text-white" />
-            </button>
           </div>
         </div>
+
+        {/* BOTTOM THUMBNAIL SELECTOR BAR (MATCHING MOCKUP CARD BAR) */}
+        <div className="relative bg-[#0E0F16] border border-[#202130] rounded-2xl p-4 flex items-center gap-3">
+          
+          {/* Scroll Left Arrow */}
+          <button
+            onClick={scrollThumbnailsLeft}
+            className="w-9 h-9 rounded-xl bg-[#141520] border border-[#2D2E42] text-white flex items-center justify-center hover:bg-[#E51A1A] transition-colors shrink-0"
+            title="Scroll Left"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Horizontally Scrollable Mini Cards Container */}
+          <div 
+            ref={thumbnailScrollRef}
+            className="flex items-center gap-4 overflow-x-auto scrollbar-none py-1 px-1 flex-1 max-w-full"
+          >
+            {WEAPONS_DATA.map((weapon, idx) => {
+              const isActive = idx === activeIndex;
+              return (
+                <button
+                  key={weapon.id}
+                  onClick={() => setActiveIndex(idx)}
+                  className={`shrink-0 w-48 bg-[#090A10] p-3 rounded-xl border text-left transition-all relative ${
+                    isActive
+                      ? 'border-[#E51A1A] shadow-[0_0_15px_rgba(229,26,26,0.3)] scale-[1.02]'
+                      : 'border-[#1C1E2B] opacity-70 hover:opacity-100 hover:border-[#383A4E]'
+                  }`}
+                >
+                  {/* Thumbnail Image */}
+                  <div className="w-full h-20 bg-[#05060A] rounded-lg p-2 mb-2 flex items-center justify-center border border-[#161724]">
+                    <img src={weapon.imageSrc} alt={weapon.name} className="max-h-full max-w-full object-contain" />
+                  </div>
+
+                  {/* Thumbnail Details */}
+                  <div className="space-y-0.5 font-mono">
+                    <div className="flex items-center gap-1 text-[9px] text-[#E51A1A] font-bold uppercase">
+                      <Target className="w-3 h-3" />
+                      <span>{weapon.manufacturer}</span>
+                    </div>
+                    <div className="text-xs font-bold text-white font-sans truncate">
+                      {weapon.name}
+                    </div>
+                    <div className="text-[9px] text-[#717382] truncate">
+                      {weapon.category}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Scroll Right Arrow */}
+          <button
+            onClick={scrollThumbnailsRight}
+            className="w-9 h-9 rounded-xl bg-[#141520] border border-[#2D2E42] text-white flex items-center justify-center hover:bg-[#E51A1A] transition-colors shrink-0"
+            title="Scroll Right"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+        </div>
+
       </section>
 
-      {/* DETAILED BLUEPRINT MODAL: Single Weapon Specifications */}
+      {/* STREAMLINED WEAPON DETAILS MODAL */}
       {selectedWeapon && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
           onClick={() => setSelectedWeapon(null)}
         >
           <div 
-            className="bg-[#12131A] border border-[#2D2E3B] text-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col relative overflow-hidden animate-scale-up"
+            className="bg-[#12131A] border border-[#2B2C3B] text-white rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.9)] max-w-lg w-full overflow-hidden relative animate-scale-up flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Red Accent Top Strip */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent z-10"></div>
+            {/* Red Top Accent Strip */}
+            <div className="h-1 bg-gradient-to-r from-transparent via-[#E51A1A] to-transparent"></div>
 
-            {/* Pinned Sticky Header with Close Button */}
-            <div className="shrink-0 px-6 py-4 sm:px-8 sm:py-5 border-b border-[#22232E] flex items-start justify-between gap-4 bg-[#12131A] z-10">
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-[#22232E] flex items-start justify-between gap-4 bg-[#12131A]">
               <div>
-                <span className="text-[10px] font-mono text-[#E51A1A] tracking-widest uppercase font-bold">
-                  {selectedWeapon.sponsor}
+                <span className="text-[10px] font-mono text-[#E51A1A] font-bold uppercase tracking-widest bg-[#E51A1A]/10 px-2.5 py-0.5 rounded border border-[#E51A1A]/20">
+                  {selectedWeapon.manufacturer}
                 </span>
-                <h3 className="text-xl sm:text-2xl font-black text-white mt-0.5 font-sans">
+                <h3 className="text-2xl font-bold text-white mt-1.5 font-sans">
                   {selectedWeapon.name}
                 </h3>
-                <p className="text-xs font-mono text-[#8E909E]">{selectedWeapon.subtitle}</p>
+                <p className="text-xs font-mono text-[#8E909E] mt-0.5">
+                  {selectedWeapon.category}
+                </p>
               </div>
 
               <button
                 onClick={() => setSelectedWeapon(null)}
-                className="p-2 text-[#888A98] hover:text-white hover:bg-[#1E1F29] rounded-lg transition-colors border border-transparent hover:border-[#333544]"
-                title="Close Blueprint"
+                className="p-1.5 text-[#888A98] hover:text-white hover:bg-[#1E1F29] rounded-lg transition-colors border border-transparent hover:border-[#333544]"
+                title="Close"
               >
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Scrollable Content Body */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
-              {/* High-res Modal Image */}
-              <div className="h-44 sm:h-52 bg-[#090A0E] rounded-xl border border-[#22232E] flex items-center justify-center p-4">
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+              {/* Weapon Image Box */}
+              <div className="h-52 sm:h-60 bg-[#08090D] rounded-xl border border-[#1E202C] p-4 flex items-center justify-center shadow-inner relative overflow-hidden">
                 <img
                   src={selectedWeapon.imageSrc}
                   alt={selectedWeapon.name}
-                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)]"
                 />
               </div>
 
-              {/* Description */}
-              <p className="text-xs sm:text-sm text-[#B0B2C0] leading-relaxed">
+              {/* Concise Description */}
+              <p className="text-xs sm:text-sm font-mono text-[#A0A2B0] leading-relaxed border-l-2 border-[#E51A1A] pl-3 py-1">
                 {selectedWeapon.description}
               </p>
 
-              {/* Technical Ballistics Matrix */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E] text-xs font-mono">
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Caliber</span>
-                  <span className="font-semibold text-white">{selectedWeapon.caliber}</span>
+              {/* Specifications Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#0B0C10] p-4 rounded-xl border border-[#1F202C] text-xs font-mono">
+                <div className="bg-[#0D0E14] p-2.5 rounded border border-[#1C1E29]">
+                  <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Calibre</span>
+                  <span className="font-semibold text-white text-sm">{selectedWeapon.calibre}</span>
                 </div>
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Muzzle Velocity</span>
-                  <span className="font-semibold text-white">{selectedWeapon.velocity}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Working Pressure</span>
-                  <span className="font-semibold text-white">{selectedWeapon.cylinderPressure}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Barrel Length</span>
-                  <span className="font-semibold text-white">{selectedWeapon.barrelLength}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Total Weight</span>
-                  <span className="font-semibold text-white">{selectedWeapon.weight}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#666675] uppercase block">Match Trigger</span>
-                  <span className="font-semibold text-white">{selectedWeapon.trigger}</span>
-                </div>
-              </div>
 
-              {/* Features List */}
-              <div className="space-y-2">
-                <span className="text-xs font-mono text-[#E51A1A] uppercase tracking-wider font-bold block">
-                  Engineering Specifications
-                </span>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#9FA1B0]">
-                  {selectedWeapon.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-[#E51A1A] font-bold">✓</span>
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
+                {selectedWeapon.barrelLength && (
+                  <div className="bg-[#0D0E14] p-2.5 rounded border border-[#1C1E29]">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Barrel Length</span>
+                    <span className="font-semibold text-white text-sm">{selectedWeapon.barrelLength}</span>
+                  </div>
+                )}
+
+                {selectedWeapon.weight && (
+                  <div className="bg-[#0D0E14] p-2.5 rounded border border-[#1C1E29]">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Weight</span>
+                    <span className="font-semibold text-white text-sm">{selectedWeapon.weight}</span>
+                  </div>
+                )}
+
+                {selectedWeapon.velocity && (
+                  <div className="bg-[#0D0E14] p-2.5 rounded border border-[#1C1E29]">
+                    <span className="text-[10px] text-[#717382] uppercase block tracking-wider">Velocity</span>
+                    <span className="font-semibold text-white text-sm">{selectedWeapon.velocity}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Pinned Sticky Bottom: ALWAYS VISIBLE CLOSE BUTTON */}
-            <div className="shrink-0 px-6 py-4 sm:px-8 border-t border-[#22232E] flex items-center justify-between bg-[#0E0F15] z-10">
-              <span className="text-[11px] font-mono text-[#6E7080] hidden sm:inline">
-                Official competition arm approved by NCC Range Safety Officers.
-              </span>
+            {/* Modal Footer */}
+            <div className="p-4 bg-[#0E0F15] border-t border-[#22232E] flex justify-end">
               <button
                 onClick={() => setSelectedWeapon(null)}
-                className="w-full sm:w-auto px-6 py-2.5 bg-[#1B1C24] hover:bg-[#E51A1A] hover:text-white border border-[#3A3C4A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold rounded-lg transition-all text-center"
+                className="w-full sm:w-auto px-6 py-2 bg-[#181923] hover:bg-[#E51A1A] text-white border border-[#2B2C3C] hover:border-[#E51A1A] text-xs font-mono uppercase tracking-wider font-bold rounded-lg transition-all shadow-sm"
               >
-                [ Close Data ]
+                Close
               </button>
             </div>
           </div>

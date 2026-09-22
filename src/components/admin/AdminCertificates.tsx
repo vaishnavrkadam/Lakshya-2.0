@@ -57,7 +57,7 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
   // Certificate requests state
   const [requests, setRequests] = useState<CertificateRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState<boolean>(true);
-  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [requestSearch, setRequestSearch] = useState<string>('');
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<{ url: string; name: string } | null>(null);
   const [rejectingRequest, setRejectingRequest] = useState<CertificateRequest | null>(null);
@@ -249,7 +249,7 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
   };
 
   const handleRejectRequest = async () => {
-    if (!rejectingRequest) return;
+    if (!rejectingRequest || rejectingRequest.status === 'Approved') return;
     try {
       setActionLoadingId(rejectingRequest.id);
       const docRef = getDocRef('certificate_requests', rejectingRequest.id);
@@ -574,8 +574,13 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {!isApproved && (
+                      {isApproved ? (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/40 border border-emerald-800 text-emerald-400 font-mono text-xs rounded font-bold">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Approved (Operations Disabled)</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleApproveRequest(req)}
                             disabled={isActionBusy}
@@ -584,21 +589,21 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
                             {isActionBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                             <span>Approve</span>
                           </button>
-                        )}
-                        {!isRejected && (
-                          <button
-                            onClick={() => {
-                              setRejectingRequest(req);
-                              setRejectionReasonInput('');
-                            }}
-                            disabled={isActionBusy}
-                            className="px-3.5 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-700 disabled:opacity-50 text-red-200 font-mono text-xs uppercase tracking-wider font-bold rounded flex items-center gap-1.5 transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Reject</span>
-                          </button>
-                        )}
-                      </div>
+                          {isPending && (
+                            <button
+                              onClick={() => {
+                                setRejectingRequest(req);
+                                setRejectionReasonInput('');
+                              }}
+                              disabled={isActionBusy}
+                              className="px-3.5 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-700 disabled:opacity-50 text-red-200 font-mono text-xs uppercase tracking-wider font-bold rounded flex items-center gap-1.5 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

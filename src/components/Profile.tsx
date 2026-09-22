@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   User, 
@@ -19,13 +19,15 @@ import {
   Loader2, 
   X,
   Lock,
-  Sprout
+  Sprout,
+  Medal
 } from 'lucide-react';
 import { REGISTRATION_FORM_URL, normalizeEmail } from '../config/lakshya';
 import { downloadCertificatePdf, renderCertificateToCanvas, sanitizeCertificateFilename } from '../lib/certificates';
 import { getSavedCertificateConfig } from '../config/certificateConfig';
-import { getDocRef, onSnapshot } from '../lib/firebase';
-import type { CertificateRequest, Booking } from '../types/lakshya';
+import { getDocRef, getColRef, onSnapshot } from '../lib/firebase';
+import type { CertificateRequest, Booking, LeaderboardEntry } from '../types/lakshya';
+import { computeRankedLeaderboard } from '../lib/ranking';
 import CertificateRequestModal from './CertificateRequestModal';
 
 export default function Profile({ setView }: { setView: (v: string) => void }) {
@@ -35,6 +37,29 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
   const [certRequest, setCertRequest] = useState<CertificateRequest | null>(null);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const certCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Subscribe to leaderboard entries to display official score and live rank
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+
+  useEffect(() => {
+    const colRef = getColRef<LeaderboardEntry>('leaderboard_entries');
+    const unsub = onSnapshot(colRef, (snap) => {
+      const list: LeaderboardEntry[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as LeaderboardEntry));
+      setLeaderboardEntries(list);
+    }, (err) => {
+      console.error("Failed to load leaderboard entries in profile:", err);
+    });
+    return () => unsub();
+  }, []);
+
+  const rankedRifle = useMemo(() => {
+    return computeRankedLeaderboard(leaderboardEntries, 'Air Rifle');
+  }, [leaderboardEntries]);
+
+  const rankedPistol = useMemo(() => {
+    return computeRankedLeaderboard(leaderboardEntries, 'Air Pistol');
+  }, [leaderboardEntries]);
 
   // Subscribe to certificate request
   useEffect(() => {
@@ -92,8 +117,20 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
     );
   }
 
+  const cleanUserEmail = currentUser.email ? normalizeEmail(currentUser.email) : '';
+
   const rifleBooking = userBookings.find((b) => b.vertical === 'Air Rifle' && b.status === 'confirmed');
   const pistolBooking = userBookings.find((b) => b.vertical === 'Air Pistol' && b.status === 'confirmed');
+
+  const userRifleRanked = rankedRifle.find(
+    (e) => (e.participantEmail && normalizeEmail(e.participantEmail) === cleanUserEmail) ||
+           (rifleBooking && e.id === rifleBooking.id)
+  );
+
+  const userPistolRanked = rankedPistol.find(
+    (e) => (e.participantEmail && normalizeEmail(e.participantEmail) === cleanUserEmail) ||
+           (pistolBooking && e.id === pistolBooking.id)
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -216,10 +253,39 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
                 </div>
                 <div className="flex items-center justify-between font-mono">
                   <span className="text-[#64748B]">Official Score:</span>
-                  <span className="font-bold text-[#DC2626]">
-                    {rifleBooking.totalScore !== null && rifleBooking.totalScore !== undefined && rifleBooking.totalScore > 0 ? `${rifleBooking.totalScore.toFixed(1)} PTS` : 'Pending Match'}
+                  <span className="font-bold text-[#DC2626] text-sm">
+                    {userRifleRanked?.score !== null && userRifleRanked?.score !== undefined && userRifleRanked.score > 0
+                      ? `${userRifleRanked.score.toFixed(1)} PTS`
+                      : (rifleBooking.totalScore !== null && rifleBooking.totalScore !== undefined && rifleBooking.totalScore > 0
+                          ? `${rifleBooking.totalScore.toFixed(1)} PTS`
+                          : 'Pending Match')}
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-[#64748B]">Live Ranking:</span>
+                  {userRifleRanked?.rank ? (
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-700/80 text-[11px]">
+                      <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Rank #{userRifleRanked.rank}</span>
+                      <span className="text-[9px] text-[#94A3B8]">({rankedRifle.length} Shooters)</span>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-[#64748B] italic">
+                      {rifleBooking.checkedIn ? 'Scoring in progress' : 'Awaiting Match'}
+                    </span>
+                  )}
+                </div>
+
+                {userRifleRanked?.count10s !== undefined && userRifleRanked?.score ? (
+                  <div className="flex items-center justify-between font-mono text-[10px] text-[#94A3B8] bg-[#0B0C10] p-1.5 rounded border border-[#282B3A]">
+                    <span>Accuracy Metrics:</span>
+                    <span className="font-semibold text-[#F8FAFC]">
+                      10s: {userRifleRanked.count10s ?? 0} · 9s: {userRifleRanked.count9s ?? 0} · 8s: {userRifleRanked.count8s ?? 0}
+                    </span>
+                  </div>
+                ) : null}
+
                 <div className="pt-2 border-t border-[#282B3A]">
                   <button
                     onClick={() => setView('digital-pass')}
@@ -278,10 +344,38 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
                 </div>
                 <div className="flex items-center justify-between font-mono">
                   <span className="text-[#64748B]">Official Score:</span>
-                  <span className="font-bold text-[#DC2626]">
-                    {pistolBooking.totalScore !== null && pistolBooking.totalScore !== undefined && pistolBooking.totalScore > 0 ? `${pistolBooking.totalScore.toFixed(1)} PTS` : 'Pending Match'}
+                  <span className="font-bold text-[#DC2626] text-sm">
+                    {userPistolRanked?.score !== null && userPistolRanked?.score !== undefined && userPistolRanked.score > 0
+                      ? `${userPistolRanked.score.toFixed(1)} PTS`
+                      : (pistolBooking.totalScore !== null && pistolBooking.totalScore !== undefined && pistolBooking.totalScore > 0
+                          ? `${pistolBooking.totalScore.toFixed(1)} PTS`
+                          : 'Pending Match')}
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-[#64748B]">Live Ranking:</span>
+                  {userPistolRanked?.rank ? (
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-700/80 text-[11px]">
+                      <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Rank #{userPistolRanked.rank}</span>
+                      <span className="text-[9px] text-[#94A3B8]">({rankedPistol.length} Shooters)</span>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-[#64748B] italic">
+                      {pistolBooking.checkedIn ? 'Scoring in progress' : 'Awaiting Match'}
+                    </span>
+                  )}
+                </div>
+
+                {userPistolRanked?.count10s !== undefined && userPistolRanked?.score ? (
+                  <div className="flex items-center justify-between font-mono text-[10px] text-[#94A3B8] bg-[#0B0C10] p-1.5 rounded border border-[#282B3A]">
+                    <span>Accuracy Metrics:</span>
+                    <span className="font-semibold text-[#F8FAFC]">
+                      10s: {userPistolRanked.count10s ?? 0} · 9s: {userPistolRanked.count9s ?? 0} · 8s: {userPistolRanked.count8s ?? 0}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="pt-2 border-t border-[#282B3A]">
                   <button
                     onClick={() => setView('digital-pass')}

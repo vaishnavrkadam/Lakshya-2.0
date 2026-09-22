@@ -43,15 +43,6 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<Booking | null>(null);
   const [showCrossVerticalWarning, setShowCrossVerticalWarning] = useState<boolean>(false);
-  const [selectedGender, setSelectedGender] = useState<'Male' | 'Female' | null>(
-    (registration?.gender === 'Male' || registration?.gender === 'Female') ? registration.gender : null
-  );
-
-  useEffect(() => {
-    if (registration?.gender === 'Male' || registration?.gender === 'Female') {
-      setSelectedGender(registration.gender as 'Male' | 'Female');
-    }
-  }, [registration]);
 
   // Determine registered verticals from the participant's intake record
   const registeredVerticals = useMemo<LakshyaVertical[]>(() => {
@@ -134,11 +125,6 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     }
 
     if (!selectedSlotId) return;
-
-    if (!selectedGender) {
-      setBookingError("Please select your Gender Division (Male or Female) before confirming your slot.");
-      return;
-    }
 
     // Check if vertical differs from registered vertical: show confirmation warning
     const isDifferentVertical = !registeredVerticals.includes(selectedVertical);
@@ -233,7 +219,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           emailKey,
           participantEmail: emailKey,
           participantName: regData.name || currentUser?.displayName || 'Competitor',
-          participantGender: selectedGender,
+          participantGender: (regData.gender as any) || (registration?.gender as any) || 'Male',
           college: regData.college || 'RVCE',
           cadetStatus: regData.cadetStatus || 'Student',
           vertical: selectedVertical,
@@ -260,7 +246,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           ticketId,
           participantName: newBooking.participantName,
           college: newBooking.college,
-          gender: selectedGender,
+          gender: newBooking.participantGender,
           cadetStatus: newBooking.cadetStatus,
           vertical: selectedVertical,
           slotId: selectedSlotId,
@@ -638,51 +624,12 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                {/* Gender division required selector */}
-                <div className="flex flex-col gap-1">
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#DC2626] font-bold">
-                    Gender Division * (For Leaderboard)
-                  </span>
-                  <div className="inline-flex p-0.5 bg-[#0B0C10] border border-[#282B3A] rounded">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedGender('Male');
-                        setBookingError(null);
-                      }}
-                      className={`px-3 py-1 font-mono text-xs uppercase tracking-wider transition-all rounded ${
-                        selectedGender === 'Male'
-                          ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow'
-                          : 'text-[#64748B] hover:text-[#F8FAFC]'
-                      }`}
-                    >
-                      Male
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedGender('Female');
-                        setBookingError(null);
-                      }}
-                      className={`px-3 py-1 font-mono text-xs uppercase tracking-wider transition-all rounded ${
-                        selectedGender === 'Female'
-                          ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow'
-                          : 'text-[#64748B] hover:text-[#F8FAFC]'
-                      }`}
-                    >
-                      Female
-                    </button>
-                  </div>
+              {bookingError && (
+                <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800 rounded">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{bookingError}</span>
                 </div>
-
-                {bookingError && (
-                  <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800 rounded">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{bookingError}</span>
-                  </div>
-                )}
-              </div>
+              )}
 
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <button

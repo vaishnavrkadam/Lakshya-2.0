@@ -110,7 +110,7 @@ export default function CertificateRequestModal({
 
     const link = driveLink.trim();
     if (!link && !photoDataUrl) {
-      setErrorMsg('Please provide a Google Drive link containing the photo of you planting the sapling.');
+      setErrorMsg('Please provide either a Google Drive link or upload a photo of your sapling planting proof.');
       return;
     }
 
@@ -141,7 +141,7 @@ export default function CertificateRequestModal({
         checkedIn: true,
         checkedInAt: checkedInBooking.checkedInAt || serverTimestamp(),
         photoUrl: photoDataUrl || '',
-        driveLink: link,
+        driveLink: link || '',
         status: 'Request Submitted',
         requestedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -245,14 +245,13 @@ export default function CertificateRequestModal({
           {/* Primary Input: Google Drive Link */}
           <div className="space-y-1.5">
             <label className="text-[#F8FAFC] font-semibold uppercase block text-xs flex items-center justify-between">
-              <span>Google Drive Link (Sapling Proof) *</span>
+              <span>Google Drive Link (Sapling Proof)</span>
               <span className="text-[10px] text-amber-400 font-normal">Must be viewable by anyone</span>
             </label>
             <div className="relative">
               <LinkIcon className="w-4 h-4 text-[#64748B] absolute left-3 top-3" />
               <input
                 type="url"
-                required
                 value={driveLink}
                 onChange={(e) => setDriveLink(e.target.value)}
                 placeholder="https://drive.google.com/file/d/... or folder link"
@@ -260,7 +259,7 @@ export default function CertificateRequestModal({
               />
             </div>
             <p className="text-[10px] text-[#64748B] leading-relaxed">
-              Upload the photo of yourself planting the Lakshya sapling to your Google Drive, click Share, set to &quot;Anyone with the link&quot;, and paste the link here.
+              Upload your sapling planting photo to Google Drive, set access to &quot;Anyone with the link&quot;, and paste here. Or attach a photo directly below.
             </p>
           </div>
 
