@@ -54,17 +54,6 @@ export default function Header({ currentView, setView }: HeaderProps) {
                 alt="RV College of Engineering" 
                 className="h-10 sm:h-12 w-auto object-contain brightness-110"
               />
-              <div className="flex flex-col leading-tight select-none">
-                <span className="font-sans font-bold text-[10px] sm:text-[11px] tracking-wider text-[#F8FAFC] uppercase">
-                  RV COLLEGE
-                </span>
-                <span className="font-sans text-[8px] sm:text-[9px] tracking-wider text-[#CBD5E1] uppercase">
-                  OF ENGINEERING
-                </span>
-                <span className="font-sans text-[7px] sm:text-[8px] tracking-widest text-[#94A3B8] uppercase">
-                  BENGALURU
-                </span>
-              </div>
             </button>
 
             {/* Red Vertical Divider */}
