@@ -44,7 +44,7 @@ export default function OnboardingModal() {
             <ol className="list-decimal pl-4 space-y-1 text-[#64748B]">
               <li>Submit the official Google Form intake registration.</li>
               <li>Provide the identical Google account email (<span className="text-[#F8FAFC]">{currentUser?.email}</span>).</li>
-              <li>Upon roster sync by range officers, return here to pick your firing slots.</li>
+              <li>Upon roster sync by admins, return here to pick your firing slots.</li>
             </ol>
           </div>
         </div>

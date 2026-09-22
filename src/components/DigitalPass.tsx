@@ -332,7 +332,7 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
                       Range Scanner Authenticator
                     </div>
                     <p className="font-mono text-[11px] text-[#64748B] leading-relaxed">
-                      Present this encrypted matrix code to the Range Safety Officer at the armory desk for digital check-in.
+                      Present this encrypted matrix code to the Admin at the armory desk for digital check-in.
                     </p>
                     <div className="font-mono text-[10px] text-[#64748B]">
                       TOKEN: <span className="text-[#F8FAFC]">{booking.qrToken ? booking.qrToken.substring(0, 12) : 'AUTH_SECURE'}...</span>

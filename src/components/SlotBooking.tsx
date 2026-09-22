@@ -528,7 +528,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               <Calendar className="w-10 h-10 text-[#64748B] mx-auto opacity-40" />
               <p className="font-headline-sm text-lg text-[#F8FAFC] uppercase">No Range Slots Published Yet</p>
               <p className="font-mono text-xs text-[#64748B] max-w-md mx-auto">
-                Firing schedules for {selectedVertical} are being calibrated by range safety officers. Check back shortly.
+                Firing schedules for {selectedVertical} are being calibrated by admins. Check back shortly.
               </p>
             </div>
           ) : (

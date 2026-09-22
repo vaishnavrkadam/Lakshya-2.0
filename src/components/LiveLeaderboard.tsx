@@ -281,7 +281,7 @@ export default function LiveLeaderboard() {
             <Trophy className="w-10 h-10 text-[#282B3A] mx-auto" />
             <p className="font-bold text-lg text-white font-sans uppercase tracking-tight">No Scores Published Yet</p>
             <p className="text-xs font-mono text-[#8E909E] max-w-sm mx-auto">
-              Leaderboard will update dynamically in real time as Range Safety Officers record verified 10-shot rounds.
+              Leaderboard will update dynamically in real time as Admins record verified 10-shot rounds.
             </p>
           </div>
         ) : (

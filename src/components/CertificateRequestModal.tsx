@@ -1,16 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getDocRef, setDoc, serverTimestamp } from '../lib/firebase';
 import { normalizeEmail } from '../config/lakshya';
 import type { Booking, CertificateRequest } from '../types/lakshya';
 import { 
   Award, 
-  Upload, 
   CheckCircle2, 
   AlertCircle, 
   AlertTriangle,
   X, 
-  Loader2, 
+  Loader2,
   ExternalLink,
   Sprout,
   Link as LinkIcon
@@ -33,89 +32,23 @@ export default function CertificateRequestModal({
 }: CertificateRequestModalProps) {
   const { currentUser, registration } = useAuth();
   const [driveLink, setDriveLink] = useState<string>(existingRequest?.driveLink || '');
-  const [photoDataUrl, setPhotoDataUrl] = useState<string>(existingRequest?.photoUrl || '');
-  const [showPhotoUpload, setShowPhotoUpload] = useState<boolean>(false);
-  const [isCompressing, setIsCompressing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
-
-  // Optional image compression for participants who upload a direct photo
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('Please select a valid image file (JPEG, PNG, or WebP).');
-      return;
-    }
-
-    setIsCompressing(true);
-    setErrorMsg(null);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const maxDimension = 900;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('Could not get 2D canvas context');
-
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const compressed = canvas.toDataURL('image/jpeg', 0.72);
-          setPhotoDataUrl(compressed);
-          setIsCompressing(false);
-        } catch (err: any) {
-          console.error('Image compression failed:', err);
-          setErrorMsg('Failed to process image. Please use a Google Drive link instead.');
-          setIsCompressing(false);
-        }
-      };
-      img.onerror = () => {
-        setErrorMsg('Failed to read image file.');
-        setIsCompressing(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => {
-      setErrorMsg('Failed to read file.');
-      setIsCompressing(false);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !currentUser.email) return;
 
     const link = driveLink.trim();
-    if (!link && !photoDataUrl) {
-      setErrorMsg('Please provide either a Google Drive link or upload a photo of your sapling planting proof.');
+    if (!link) {
+      setErrorMsg('Please provide your Google Drive link for sapling planting proof.');
       return;
     }
 
-    // Basic URL validation if link was entered
-    if (link && !link.startsWith('http://') && !link.startsWith('https://')) {
+    // Basic URL validation
+    if (!link.startsWith('http://') && !link.startsWith('https://')) {
       setErrorMsg('Please enter a valid URL starting with https:// (e.g., https://drive.google.com/...)');
       return;
     }
@@ -140,8 +73,8 @@ export default function CertificateRequestModal({
         ticketId: checkedInBooking.ticketId || '',
         checkedIn: true,
         checkedInAt: checkedInBooking.checkedInAt || serverTimestamp(),
-        photoUrl: photoDataUrl || '',
-        driveLink: link || '',
+        photoUrl: existingRequest?.photoUrl || '',
+        driveLink: link,
         status: 'Request Submitted',
         requestedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -222,7 +155,7 @@ export default function CertificateRequestModal({
           <p className="text-[11px] text-amber-200/90 leading-relaxed">
             Ensure your Google Drive link sharing setting is set to{' '}
             <strong className="text-white underline">&quot;Anyone with the link can view&quot; (Public)</strong>.
-            If the link is private or restricted, range officers will not be able to verify your sapling planting proof and your certificate request will be rejected.
+            If the link is private or restricted, admins will not be able to verify your sapling planting proof and your certificate request will be rejected.
           </p>
         </div>
 
@@ -252,6 +185,7 @@ export default function CertificateRequestModal({
               <LinkIcon className="w-4 h-4 text-[#64748B] absolute left-3 top-3" />
               <input
                 type="url"
+                required
                 value={driveLink}
                 onChange={(e) => setDriveLink(e.target.value)}
                 placeholder="https://drive.google.com/file/d/... or folder link"
@@ -259,78 +193,8 @@ export default function CertificateRequestModal({
               />
             </div>
             <p className="text-[10px] text-[#64748B] leading-relaxed">
-              Upload your sapling planting photo to Google Drive, set access to &quot;Anyone with the link&quot;, and paste here. Or attach a photo directly below.
+              Upload your sapling planting photo to Google Drive, set access to &quot;Anyone with the link can view&quot;, and paste the link here.
             </p>
-          </div>
-
-          {/* Optional Direct Photo Upload Toggle */}
-          <div className="pt-2 border-t border-[#282B3A]">
-            {!showPhotoUpload && !photoDataUrl ? (
-              <button
-                type="button"
-                onClick={() => setShowPhotoUpload(true)}
-                className="text-[11px] text-[#64748B] hover:text-[#F8FAFC] flex items-center gap-1.5 transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>Optional: Also attach photo file directly</span>
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[#F8FAFC] uppercase">
-                    Optional Photo Attachment
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotoDataUrl('');
-                      setShowPhotoUpload(false);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className="text-[10px] text-[#64748B] hover:text-[#EF4444]"
-                  >
-                    Remove Photo
-                  </button>
-                </div>
-
-                {photoDataUrl ? (
-                  <div className="relative rounded border border-[#282B3A] bg-[#0B0C10] p-2">
-                    <img
-                      src={photoDataUrl}
-                      alt="Sapling planting proof preview"
-                      className="max-h-36 mx-auto object-contain rounded"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border border-dashed border-[#282B3A] hover:border-[#DC2626] bg-[#0B0C10] p-4 rounded text-center cursor-pointer transition-colors space-y-1"
-                  >
-                    {isCompressing ? (
-                      <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
-                        <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
-                        <span>Compressing image...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 text-[#DC2626] mx-auto" />
-                        <span className="text-xs text-[#F8FAFC] block font-semibold">
-                          Click to select photo (JPEG, PNG)
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
-            )}
           </div>
 
           {errorMsg && (
@@ -351,7 +215,7 @@ export default function CertificateRequestModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isCompressing || (!driveLink.trim() && !photoDataUrl)}
+              disabled={isSubmitting || !driveLink.trim()}
               className="px-5 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] text-xs font-bold uppercase tracking-widest rounded shadow-lg transition-colors flex items-center gap-2"
             >
               {isSubmitting ? (

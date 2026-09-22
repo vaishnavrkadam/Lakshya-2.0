@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { getDocRef, setDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp } from '../../lib/firebase';
 import { normalizeEmail } from '../../config/lakshya';
 import { useAuth } from '../../context/AuthContext';
@@ -17,7 +17,8 @@ import {
   AlertCircle,
   GraduationCap,
   Award,
-  Trash2
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { downloadCertificatePdf } from '../../lib/certificates';
 
@@ -292,6 +293,30 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
       result.pop();
     }
     return result;
+  };
+
+  const csvFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleCsvFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        setBulkText(text);
+        const validRows = text.split(/\r?\n/).filter((l) => {
+          const trimmed = l.trim();
+          return trimmed.length > 0 && !trimmed.toLowerCase().includes('timestamp') && trimmed.includes('@');
+        });
+        setBulkMessage(`File "${file.name}" loaded successfully (${validRows.length} valid participant entries detected). Review the data below and click "Process & Authorize Roster".`);
+      }
+    };
+    reader.onerror = () => {
+      alert("Failed to read CSV file. Please check file permissions.");
+    };
+    reader.readAsText(file);
   };
 
   const handleBulkImport = async (e: React.FormEvent) => {
@@ -861,19 +886,54 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
             )}
 
             <form onSubmit={handleBulkImport} className="space-y-4 font-mono text-xs">
-              <div>
-                <label className="text-[#64748B] uppercase block mb-1">
-                  Google Sheet CSV Rows (Header row will be automatically ignored):
+              {/* Direct CSV File Upload Zone */}
+              <div className="p-4 bg-[#0B0C10] border-2 border-dashed border-[#DC2626]/70 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-[#1A1C26] border border-[#DC2626]/40 text-[#DC2626] rounded-md">
+                    <FileSpreadsheet className="w-5 h-5 text-[#DC2626]" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[#F8FAFC] text-xs block">
+                      Upload Responses.csv File
+                    </span>
+                    <span className="text-[11px] text-[#64748B]">
+                      Upload Google Sheets/Forms export directly to load participant roster
+                    </span>
+                  </div>
+                </div>
+
+                <label className="cursor-pointer px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] text-xs font-bold uppercase tracking-wider rounded transition-all hover:scale-105 active:scale-95 shrink-0 flex items-center gap-1.5 shadow-[0_0_12px_rgba(220,38,38,0.4)]">
+                  <Upload className="w-4 h-4" />
+                  <span>Choose CSV File</span>
+                  <input
+                    ref={csvFileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleCsvFileUpload}
+                    className="hidden"
+                  />
                 </label>
-                <div className="p-2 bg-[#0B0C10] border border-[#282B3A] text-[11px] text-[#64748B] mb-2">
-                  <span className="text-[#DC2626] font-bold">Columns Detected:</span> Timestamp, Email Address, Name, RVCE Email ID, Date of Birth, Phone Number, USN, Branch, Year of Study, and <strong className="text-white">Preferred Shooting Category</strong> (Air Rifle / Air Pistol)
+              </div>
+
+              {/* Separator */}
+              <div className="relative flex py-0.5 items-center">
+                <div className="flex-grow border-t border-[#282B3A]"></div>
+                <span className="flex-shrink mx-3 text-[#64748B] text-[10px] uppercase font-bold tracking-widest">
+                  OR INSPECT / PASTE CSV ROWS BELOW
+                </span>
+                <div className="flex-grow border-t border-[#282B3A]"></div>
+              </div>
+
+              <div>
+                <div className="p-2 bg-[#0B0C10] border border-[#282B3A] text-[11px] text-[#64748B] mb-2 rounded">
+                  <span className="text-[#DC2626] font-bold">Detected Format:</span> Timestamp, Email Address, Name, RVCE Email ID, Date of Birth, Phone Number, USN, Branch, Year of Study, and <strong className="text-white">Preferred Shooting Category</strong> (Air Rifle / Air Pistol)
                 </div>
                 <textarea
-                  rows={9}
+                  rows={7}
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
-                  placeholder={`2026/09/20 10:15:00 AM GMT+5:30, rahul@gmail.com, Rahul Sharma, rahul.cs24@rvce.edu.in, 15/04/2004, 9876543210, 1RV22CS001, CSE, 2nd Year`}
-                  className="w-full p-3 bg-[#0B0C10] border border-[#282B3A] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#DC2626]"
+                  placeholder={`Paste or upload CSV entries here. Header row is automatically ignored...\n2026/09/20 10:15:00 AM, rahul@gmail.com, Rahul Sharma, rahul.cs24@rvce.edu.in, 15/04/2004, 9876543210, 1RV22CS001, CSE, 2, Air Rifle`}
+                  className="w-full p-3 bg-[#0B0C10] border border-[#282B3A] text-xs text-[#F8FAFC] focus:outline-none focus:border-[#DC2626] rounded font-mono leading-relaxed"
                   required
                 />
                 <span className="text-[11px] text-[#64748B] block mt-1">

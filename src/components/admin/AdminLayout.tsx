@@ -67,7 +67,7 @@ export default function AdminLayout({ currentTab, setTab, children }: AdminLayou
         </div>
 
         <div className="font-mono text-xs text-[#64748B] bg-[#12131A] px-3.5 py-1.5 border border-[#282B3A] self-start md:self-auto">
-          Logged Officer: <strong className="text-[#F8FAFC]">{currentUser.email}</strong>
+          Logged Admin: <strong className="text-[#F8FAFC]">{currentUser.email}</strong>
         </div>
       </div>
 

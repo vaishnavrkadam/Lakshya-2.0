@@ -59,8 +59,8 @@ export default function Header({ currentView, setView }: HeaderProps) {
             {/* Red Vertical Divider */}
             <div className="hidden lg:block h-8 w-[1px] bg-[#DC2626]/70 shadow-[0_0_8px_rgba(220,38,38,0.5)] shrink-0" />
 
-            {/* Left Nav: HOME, SLOT ALLOCATION */}
-            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
+            {/* Left Nav: HOME, SLOT ALLOCATION, PARTICIPANT PASS */}
+            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 shrink-0">
               <button
                 onClick={() => handleNavClick('overview')}
                 className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
@@ -82,11 +82,22 @@ export default function Header({ currentView, setView }: HeaderProps) {
               >
                 SLOT ALLOCATION
               </button>
+
+              <button
+                onClick={() => handleNavClick('digital-pass')}
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
+                  isPassActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                PARTICIPANT PASS
+              </button>
             </nav>
           </div>
 
-          {/* CENTER GROUP: GARE Logo (Centered in Navbar) */}
-          <div className="flex items-center justify-center shrink-0 px-2 sm:px-4 z-10">
+          {/* CENTER GROUP: GARE Logo (True Center of Navbar) */}
+          <div className="hidden lg:flex items-center justify-center shrink-0 px-2 sm:px-4 absolute left-1/2 -translate-x-1/2 z-10">
             <button
               onClick={() => handleNavClick('overview')}
               className="flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
@@ -100,21 +111,10 @@ export default function Header({ currentView, setView }: HeaderProps) {
             </button>
           </div>
 
-          {/* RIGHT GROUP: Right Nav Items (PARTICIPANT PASS, LEADERBOARD, PROFILE) + Divider + NCC Logo + Register Now + Sign In */}
+          {/* RIGHT GROUP: Right Nav Items (LEADERBOARD, PROFILE, ADMIN) + Divider + NCC Logo + Sign In */}
           <div className="flex items-center gap-2 xl:gap-3.5 shrink-0 pl-2">
-            {/* Right Nav: PARTICIPANT PASS, LEADERBOARD, PROFILE */}
+            {/* Right Nav: LEADERBOARD, PROFILE, ADMIN */}
             <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 shrink-0">
-              <button
-                onClick={() => handleNavClick('digital-pass')}
-                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
-                  isPassActive
-                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
-                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
-                }`}
-              >
-                PARTICIPANT PASS
-              </button>
-
               <button
                 onClick={() => handleNavClick('live-leaderboard')}
                 className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
@@ -162,24 +162,6 @@ export default function Header({ currentView, setView }: HeaderProps) {
                 className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(220,38,38,0.25)]"
               />
             </div>
-
-            {/* [ REGISTER NOW ] Button */}
-            {!isAdmin && (
-              <button
-                onClick={() => {
-                  if (!currentUser) {
-                    loginWithGoogle();
-                  } else if (!registration) {
-                    setOnboardingOpen(true);
-                  } else {
-                    handleNavClick('slot-booking');
-                  }
-                }}
-                className="hidden sm:inline-flex items-center justify-center px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs font-bold uppercase tracking-wider rounded shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all hover:scale-105 active:scale-95 shrink-0"
-              >
-                [ REGISTER NOW ]
-              </button>
-            )}
 
             {/* Sign In / User Auth Controls */}
             {currentUser ? (
@@ -324,20 +306,6 @@ export default function Header({ currentView, setView }: HeaderProps) {
 
           {/* Quick Action Button */}
           <div className="pt-2 border-t border-[#282B3A] flex flex-col gap-2">
-            {!isAdmin && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (!currentUser) loginWithGoogle();
-                  else if (!registration) setOnboardingOpen(true);
-                  else setView('slot-booking');
-                }}
-                className="w-full py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest text-center font-bold rounded shadow-md"
-              >
-                [ REGISTER NOW ]
-              </button>
-            )}
-
             {!currentUser && (
               <button
                 onClick={() => {

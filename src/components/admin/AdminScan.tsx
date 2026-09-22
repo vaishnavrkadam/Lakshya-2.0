@@ -397,7 +397,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         action: 'CHECK_IN_DUPLICATE_ATTEMPT',
         entityType: 'booking',
         entityId: bookingData.id,
-        actorEmail: currentUser?.email || 'officer',
+        actorEmail: currentUser?.email || 'admin',
         vertical: bookingData.vertical,
         metadata: {
           ticketId: bookingData.ticketId,
@@ -481,7 +481,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         await updateDoc(bookingRef, {
           checkedIn: true,
           checkedInAt: now,
-          checkedInBy: currentUser?.email || 'range_officer',
+          checkedInBy: currentUser?.email || 'admin',
           updatedAt: now,
         });
 
@@ -491,7 +491,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
           action: 'CHECK_IN',
           entityType: 'booking',
           entityId: targetId,
-          actorEmail: currentUser?.email || 'range_officer',
+          actorEmail: currentUser?.email || 'admin',
           vertical: booking.vertical,
           metadata: {
             ticketId: booking.ticketId,
