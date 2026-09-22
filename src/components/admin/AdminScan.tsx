@@ -10,6 +10,7 @@ import {
   query, 
   where, 
   setDoc, 
+  updateDoc,
   runTransaction, 
   serverTimestamp 
 } from '../../lib/firebase';
@@ -341,7 +342,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
         const bookingRef = getDocRef('bookings', payload.bookingId);
         const snap = await getDoc(bookingRef);
         if (snap.exists()) {
-          bookingData = snap.data() as Booking;
+          bookingData = { id: snap.id, ...(snap.data() as any) };
         }
       } catch (e) {
         console.warn('Direct bookingId lookup failed:', e);
@@ -363,7 +364,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
           const qTicket = query(getColRef('bookings'), where('ticketId', '==', searchTarget));
           const snap = await getDocs(qTicket);
           if (!snap.empty) {
-            bookingData = snap.docs[0].data() as Booking;
+            bookingData = { id: snap.docs[0].id, ...(snap.docs[0].data() as any) };
           }
         } catch (e) {
           console.warn('Ticket query failed:', e);
@@ -442,7 +443,7 @@ export default function AdminScan({ bookings }: AdminScanProps) {
       const qTicket = query(getColRef('bookings'), where('ticketId', '==', queryCode));
       const snap = await getDocs(qTicket);
       if (!snap.empty) {
-        const bData = snap.docs[0].data() as Booking;
+        const bData = { id: snap.docs[0].id, ...(snap.docs[0].data() as any) };
         setScannedResult({
           booking: bData,
           isDuplicate: bData.checkedIn,
@@ -458,39 +459,38 @@ export default function AdminScan({ bookings }: AdminScanProps) {
     });
   };
 
-  // Atomic Firestore Check-In Transaction
+  // Atomic Check-In Execution with Timeout Safety
   const handleConfirmAttendance = async () => {
     if (!scannedResult?.booking) return;
 
     const booking = scannedResult.booking;
+    const targetId = booking.id || scannedResult.payload?.bookingId;
+    if (!targetId) {
+      alert('Missing booking identifier. Please search participant manually.');
+      return;
+    }
+
     setProcessingCheckIn(true);
 
-    const bookingRef = getDocRef('bookings', booking.id);
-    const auditRef = getDocRef('audit_logs', `audit_checkin_${Date.now()}`);
-
     try {
-      await runTransaction(bookingRef.firestore, async (tx) => {
-        const snap = await tx.get(bookingRef);
-        if (!snap.exists()) throw new Error('Booking not found in database.');
-        const current = snap.data() as Booking;
+      const bookingRef = getDocRef('bookings', targetId);
+      const auditRef = getDocRef('audit_logs', `audit_checkin_${Date.now()}`);
+      const now = serverTimestamp();
 
-        if (current.checkedIn) {
-          throw new Error('Shooter was already checked in!');
-        }
-
-        const now = serverTimestamp();
-        tx.update(bookingRef, {
+      const updatePromise = async () => {
+        await updateDoc(bookingRef, {
           checkedIn: true,
           checkedInAt: now,
           checkedInBy: currentUser?.email || 'range_officer',
           updatedAt: now,
         });
 
-        tx.set(auditRef, {
+        // Audit log asynchronously (never blocks check-in)
+        setDoc(auditRef, {
           id: auditRef.id,
           action: 'CHECK_IN',
           entityType: 'booking',
-          entityId: booking.id,
+          entityId: targetId,
           actorEmail: currentUser?.email || 'range_officer',
           vertical: booking.vertical,
           metadata: {
@@ -498,14 +498,20 @@ export default function AdminScan({ bookings }: AdminScanProps) {
             participantName: booking.participantName,
           },
           createdAt: now,
-        });
-      });
+        }).catch(console.warn);
+      };
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Check-in operation timed out after 8 seconds. Please check network.')), 8000)
+      );
+
+      await Promise.race([updatePromise(), timeoutPromise]);
 
       setScannerStatus('Check-in successful');
       setCheckInSuccess(`Check-in verified: ${booking.participantName} (${booking.vertical})!`);
       setScannedResult(null);
     } catch (err: any) {
-      console.error('Check-in transaction error:', err);
+      console.error('Check-in error:', err);
       alert(err.message || 'Failed to record attendance.');
     } finally {
       setProcessingCheckIn(false);

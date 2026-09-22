@@ -660,7 +660,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
               </h2>
             </div>
             <span className="text-xs font-mono text-[#64748B]">
-              NCC RVCE Event Directorate
+              NCC RVCE Event
             </span>
           </div>
 
@@ -668,7 +668,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             {/* Contact 1 */}
             <div className="bg-[#0B0C10] border border-[#282B3A] p-4 rounded-lg space-y-1.5 hover:border-[#DC2626]/60 transition-colors">
               <div className="text-[#64748B] text-[10px] uppercase tracking-wider font-semibold">
-                Cadet Senior Under Officer
+                Company Senior Under Officer
               </div>
               <div className="text-[#F8FAFC] font-bold text-sm">
                 CSUO Nandan Naniyappa

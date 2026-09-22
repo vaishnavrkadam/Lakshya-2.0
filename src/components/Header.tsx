@@ -59,12 +59,12 @@ export default function Header({ currentView, setView }: HeaderProps) {
             {/* Red Vertical Divider */}
             <div className="hidden lg:block h-8 w-[1px] bg-[#DC2626]/70 shadow-[0_0_8px_rgba(220,38,38,0.5)] shrink-0" />
 
-            {/* Left Nav: HOME, SLOT ALLOCATION, PARTICIPANT PASS */}
+            {/* Left Nav: HOME, SLOT ALLOCATION */}
             <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
               {/* HOME (Active styling: rounded border button with red outline) */}
               <button
                 onClick={() => handleNavClick('overview')}
-                className={`font-mono text-xs uppercase tracking-wider transition-all px-3 py-1.5 rounded ${
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
                   isHomeActive
                     ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
                     : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
@@ -75,7 +75,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
 
               <button
                 onClick={() => handleNavClick('slot-booking')}
-                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
                   isSlotActive
                     ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
                     : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
@@ -83,22 +83,11 @@ export default function Header({ currentView, setView }: HeaderProps) {
               >
                 SLOT ALLOCATION
               </button>
-
-              <button
-                onClick={() => handleNavClick('digital-pass')}
-                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
-                  isPassActive
-                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
-                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
-                }`}
-              >
-                PARTICIPANT PASS
-              </button>
             </nav>
           </div>
 
           {/* CENTER GROUP: GARE Logo */}
-          <div className="flex items-center justify-center shrink-0 px-1 sm:px-3">
+          <div className="flex items-center justify-center shrink-0 px-3 sm:px-6">
             <button
               onClick={() => handleNavClick('overview')}
               className="flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
@@ -107,18 +96,29 @@ export default function Header({ currentView, setView }: HeaderProps) {
               <img 
                 src="/assets/logos/GARE Logo.png" 
                 alt="GARE - Precision & Accuracy" 
-                className="h-10 sm:h-12 md:h-14 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]"
+                className="h-9 sm:h-11 md:h-12 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]"
               />
             </button>
           </div>
 
           {/* RIGHT GROUP: Right Nav Items + Divider + NCC Logo + Register Now + Sign In */}
-          <div className="flex items-center gap-2.5 xl:gap-4 shrink-0">
-            {/* Right Nav: LEADERBOARD, PROFILE */}
-            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
+          <div className="flex items-center gap-2 xl:gap-3.5 shrink-0">
+            {/* Right Nav: PARTICIPANT PASS, LEADERBOARD, PROFILE */}
+            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 shrink-0">
+              <button
+                onClick={() => handleNavClick('digital-pass')}
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
+                  isPassActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                PARTICIPANT PASS
+              </button>
+
               <button
                 onClick={() => handleNavClick('live-leaderboard')}
-                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
                   isLeaderboardActive
                     ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
                     : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
@@ -129,7 +129,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
 
               <button
                 onClick={() => handleNavClick('profile')}
-                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 xl:px-3 py-1.5 rounded ${
                   isProfileActive
                     ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
                     : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
@@ -141,7 +141,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
               {isAdmin && (
                 <button
                   onClick={() => handleNavClick('admin')}
-                  className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded flex items-center gap-1 text-[#F59E0B] border border-[#F59E0B]/50 hover:bg-[#F59E0B]/10 ${
+                  className={`font-mono text-[11px] xl:text-xs uppercase tracking-wider whitespace-nowrap transition-all px-2.5 py-1.5 rounded flex items-center gap-1 text-[#F59E0B] border border-[#F59E0B]/50 hover:bg-[#F59E0B]/10 ${
                     isAdminActive ? 'bg-[#F59E0B]/20 font-bold' : ''
                   }`}
                   title="Admin Command Suite"

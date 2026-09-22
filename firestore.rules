@@ -18,7 +18,8 @@ service cloud.firestore {
         normalizedEmail() == 'shaurya.lakshya.admin@gmail.com' ||
         normalizedEmail() == 'rvcecdtlokakshasridhar@gmail.com' ||
         normalizedEmail() == 'vaishnavkadam57@gmail.com' ||
-        normalizedEmail() == 'vaishnavrkadam.cs25@rvce.edu.in'
+        normalizedEmail() == 'vaishnavrkadam.cs25@rvce.edu.in' ||
+        normalizedEmail() == 'rvcecdtvaishnav@gmail.com'
       );
     }
 

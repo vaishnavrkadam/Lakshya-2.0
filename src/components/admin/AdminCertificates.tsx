@@ -506,7 +506,7 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
                       )}
                     </div>
 
-                    {/* Middle: Sapling Photo Thumbnail & Links */}
+                    {/* Middle: Sapling Proof (Drive Link & Photo Preview) */}
                     <div className="flex items-center gap-3 shrink-0">
                       {req.photoUrl ? (
                         <div
@@ -524,30 +524,32 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
                           </div>
                         </div>
                       ) : (
-                        <div className="w-20 h-20 bg-[#0B0C10] border border-[#282B3A] rounded flex items-center justify-center text-[#64748B] font-mono text-[10px] text-center p-1">
-                          No Direct Photo
+                        <div className="w-20 h-20 bg-[#0B0C10] border border-[#282B3A] rounded flex flex-col items-center justify-center text-[#64748B] font-mono text-[10px] text-center p-1 space-y-1">
+                          <ExternalLink className="w-5 h-5 text-cyan-400" />
+                          <span className="text-[9px] text-[#94A3B8]">Drive Proof</span>
                         </div>
                       )}
 
-                      <div className="space-y-1 text-xs font-mono">
-                        <span className="text-[10px] uppercase text-[#64748B] block">Planting Proof</span>
-                        {req.photoUrl && (
-                          <button
-                            onClick={() => setSelectedPhotoModal({ url: req.photoUrl, name: req.participantName })}
-                            className="text-xs text-[#DC2626] hover:underline flex items-center gap-1 font-semibold"
-                          >
-                            <Eye className="w-3 h-3" /> View Photo
-                          </button>
-                        )}
+                      <div className="space-y-1.5 text-xs font-mono">
+                        <span className="text-[10px] uppercase text-[#64748B] block font-semibold">Sapling Proof</span>
                         {req.driveLink && (
                           <a
                             href={req.driveLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-cyan-400 hover:underline flex items-center gap-1"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B0C10] hover:bg-[#1A1C26] border border-cyan-800/80 hover:border-cyan-500 text-cyan-300 font-mono text-xs rounded transition-all shadow-sm font-semibold"
                           >
-                            <ExternalLink className="w-3 h-3" /> Drive Link
+                            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Open Drive Link</span>
                           </a>
+                        )}
+                        {req.photoUrl && (
+                          <button
+                            onClick={() => setSelectedPhotoModal({ url: req.photoUrl, name: req.participantName })}
+                            className="text-xs text-[#DC2626] hover:underline flex items-center gap-1 font-semibold block pt-0.5"
+                          >
+                            <Eye className="w-3 h-3" /> Inspect Photo
+                          </button>
                         )}
                       </div>
                     </div>

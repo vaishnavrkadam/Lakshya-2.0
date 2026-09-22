@@ -6,13 +6,14 @@ import type { Booking, CertificateRequest } from '../types/lakshya';
 import { 
   Award, 
   Upload, 
-  Image as ImageIcon, 
   CheckCircle2, 
   AlertCircle, 
+  AlertTriangle,
   X, 
   Loader2, 
   ExternalLink,
-  Sprout
+  Sprout,
+  Link as LinkIcon
 } from 'lucide-react';
 
 interface CertificateRequestModalProps {
@@ -31,8 +32,9 @@ export default function CertificateRequestModal({
   onSuccess
 }: CertificateRequestModalProps) {
   const { currentUser, registration } = useAuth();
-  const [photoDataUrl, setPhotoDataUrl] = useState<string>(existingRequest?.photoUrl || '');
   const [driveLink, setDriveLink] = useState<string>(existingRequest?.driveLink || '');
+  const [photoDataUrl, setPhotoDataUrl] = useState<string>(existingRequest?.photoUrl || '');
+  const [showPhotoUpload, setShowPhotoUpload] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function CertificateRequestModal({
 
   if (!isOpen) return null;
 
-  // Compress image client-side to <80KB JPEG to guarantee zero extra cloud storage cost
+  // Optional image compression for participants who upload a direct photo
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,13 +82,12 @@ export default function CertificateRequestModal({
 
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Compress as JPEG quality 0.72 (~40-70 KB data URL)
           const compressed = canvas.toDataURL('image/jpeg', 0.72);
           setPhotoDataUrl(compressed);
           setIsCompressing(false);
         } catch (err: any) {
           console.error('Image compression failed:', err);
-          setErrorMsg('Failed to process image. Please try another photograph.');
+          setErrorMsg('Failed to process image. Please use a Google Drive link instead.');
           setIsCompressing(false);
         }
       };
@@ -107,8 +108,15 @@ export default function CertificateRequestModal({
     e.preventDefault();
     if (!currentUser || !currentUser.email) return;
 
-    if (!photoDataUrl && !driveLink.trim()) {
-      setErrorMsg('Please upload a photo of yourself planting the sapling, or provide a Google Drive link.');
+    const link = driveLink.trim();
+    if (!link && !photoDataUrl) {
+      setErrorMsg('Please provide a Google Drive link containing the photo of you planting the sapling.');
+      return;
+    }
+
+    // Basic URL validation if link was entered
+    if (link && !link.startsWith('http://') && !link.startsWith('https://')) {
+      setErrorMsg('Please enter a valid URL starting with https:// (e.g., https://drive.google.com/...)');
       return;
     }
 
@@ -119,7 +127,8 @@ export default function CertificateRequestModal({
       const cleanEmail = normalizeEmail(currentUser.email);
       const reqRef = getDocRef('certificate_requests', cleanEmail);
 
-      const requestPayload: Partial<CertificateRequest> = {
+      // Safe payload: explicitly ensure NO property is ever undefined!
+      const requestPayload: Record<string, any> = {
         id: cleanEmail,
         participantEmail: cleanEmail,
         participantName: registration?.name || currentUser.displayName || 'Competitor',
@@ -127,14 +136,13 @@ export default function CertificateRequestModal({
         usn: registration?.usn || '',
         college: registration?.college || checkedInBooking.college || 'RVCE',
         vertical: checkedInBooking.vertical || registration?.vertical || 'Air Rifle',
-        bookingId: checkedInBooking.id,
-        ticketId: checkedInBooking.ticketId,
+        bookingId: checkedInBooking.id || '',
+        ticketId: checkedInBooking.ticketId || '',
         checkedIn: true,
         checkedInAt: checkedInBooking.checkedInAt || serverTimestamp(),
         photoUrl: photoDataUrl || '',
-        driveLink: driveLink.trim() || undefined,
+        driveLink: link,
         status: 'Request Submitted',
-        rejectionReason: undefined,
         requestedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -177,7 +185,7 @@ export default function CertificateRequestModal({
           </button>
         </div>
 
-        {/* Verification Badge */}
+        {/* Range Check-In Verified Badge */}
         <div className="p-3 bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-mono text-xs rounded flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -200,10 +208,23 @@ export default function CertificateRequestModal({
               </p>
             )}
             <p className="text-[10px] text-[#94A3B8] pl-5">
-              Please upload a clearer photograph of yourself planting the sapling below to resubmit.
+              Please update your Google Drive link below and ensure it is publicly accessible.
             </p>
           </div>
         )}
+
+        {/* Public Sharing Warning Callout */}
+        <div className="p-3.5 bg-amber-950/50 border border-amber-700/80 rounded-lg text-amber-200 font-mono text-xs space-y-1.5 shadow-sm">
+          <div className="flex items-center gap-2 font-bold text-amber-400 uppercase tracking-wider text-[11px]">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>IMPORTANT: PUBLIC SHARING REQUIRED</span>
+          </div>
+          <p className="text-[11px] text-amber-200/90 leading-relaxed">
+            Ensure your Google Drive link sharing setting is set to{' '}
+            <strong className="text-white underline">&quot;Anyone with the link can view&quot; (Public)</strong>.
+            If the link is private or restricted, range officers will not be able to verify your sapling planting proof and your certificate request will be rejected.
+          </p>
+        </div>
 
         {/* Request Form */}
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
@@ -221,96 +242,96 @@ export default function CertificateRequestModal({
             </div>
           </div>
 
-          {/* Step 4 Requirement Notice */}
-          <div className="space-y-1 text-[#94A3B8] text-[11px] leading-relaxed">
-            <span className="font-bold text-[#F8FAFC] uppercase block text-xs">
-              Plant A Sapling Proof Requirement:
-            </span>
-            <p>
-              In alignment with the green initiative of Lakshya 2.0, please upload a photograph of yourself planting the sapling provided during the championship.
+          {/* Primary Input: Google Drive Link */}
+          <div className="space-y-1.5">
+            <label className="text-[#F8FAFC] font-semibold uppercase block text-xs flex items-center justify-between">
+              <span>Google Drive Link (Sapling Proof) *</span>
+              <span className="text-[10px] text-amber-400 font-normal">Must be viewable by anyone</span>
+            </label>
+            <div className="relative">
+              <LinkIcon className="w-4 h-4 text-[#64748B] absolute left-3 top-3" />
+              <input
+                type="url"
+                required
+                value={driveLink}
+                onChange={(e) => setDriveLink(e.target.value)}
+                placeholder="https://drive.google.com/file/d/... or folder link"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#0B0C10] border border-[#282B3A] text-xs text-[#F8FAFC] rounded placeholder:text-[#64748B] focus:outline-none focus:border-[#DC2626]"
+              />
+            </div>
+            <p className="text-[10px] text-[#64748B] leading-relaxed">
+              Upload the photo of yourself planting the Lakshya sapling to your Google Drive, click Share, set to &quot;Anyone with the link&quot;, and paste the link here.
             </p>
           </div>
 
-          {/* Photo Upload Zone */}
-          <div className="space-y-2">
-            <label className="text-[#F8FAFC] font-semibold uppercase block text-[11px]">
-              Sapling Planting Photograph *
-            </label>
-
-            {photoDataUrl ? (
-              <div className="relative rounded-lg border border-[#282B3A] bg-[#0B0C10] overflow-hidden p-2">
-                <div className="w-full h-48 bg-black flex items-center justify-center rounded overflow-hidden">
-                  <img
-                    src={photoDataUrl}
-                    alt="Sapling planting proof"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <div className="pt-2 flex items-center justify-between">
-                  <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Photo Optimized & Ready
+          {/* Optional Direct Photo Upload Toggle */}
+          <div className="pt-2 border-t border-[#282B3A]">
+            {!showPhotoUpload && !photoDataUrl ? (
+              <button
+                type="button"
+                onClick={() => setShowPhotoUpload(true)}
+                className="text-[11px] text-[#64748B] hover:text-[#F8FAFC] flex items-center gap-1.5 transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#DC2626]" />
+                <span>Optional: Also attach photo file directly</span>
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#F8FAFC] uppercase">
+                    Optional Photo Attachment
                   </span>
                   <button
                     type="button"
                     onClick={() => {
                       setPhotoDataUrl('');
+                      setShowPhotoUpload(false);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    className="text-[11px] text-[#EF4444] hover:underline"
+                    className="text-[10px] text-[#64748B] hover:text-[#EF4444]"
                   >
-                    Change Photo
+                    Remove Photo
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#282B3A] hover:border-[#DC2626] bg-[#0B0C10] hover:bg-[#1A1C26]/40 p-6 rounded-lg text-center cursor-pointer transition-colors space-y-2"
-              >
-                {isCompressing ? (
-                  <div className="space-y-2 py-4">
-                    <Loader2 className="w-8 h-8 text-[#DC2626] animate-spin mx-auto" />
-                    <p className="text-xs text-[#94A3B8]">Optimizing photo for secure upload...</p>
+
+                {photoDataUrl ? (
+                  <div className="relative rounded border border-[#282B3A] bg-[#0B0C10] p-2">
+                    <img
+                      src={photoDataUrl}
+                      alt="Sapling planting proof preview"
+                      className="max-h-36 mx-auto object-contain rounded"
+                    />
                   </div>
                 ) : (
-                  <>
-                    <div className="w-10 h-10 rounded-full bg-[#1A1C26] border border-[#282B3A] flex items-center justify-center mx-auto text-[#DC2626]">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-[#F8FAFC] block">
-                        Click to Upload Sapling Photo
-                      </span>
-                      <span className="text-[10px] text-[#64748B]">
-                        JPEG, PNG, or WebP · Photo of you planting the sapling
-                      </span>
-                    </div>
-                  </>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border border-dashed border-[#282B3A] hover:border-[#DC2626] bg-[#0B0C10] p-4 rounded text-center cursor-pointer transition-colors space-y-1"
+                  >
+                    {isCompressing ? (
+                      <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
+                        <span>Compressing image...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-[#DC2626] mx-auto" />
+                        <span className="text-xs text-[#F8FAFC] block font-semibold">
+                          Click to select photo (JPEG, PNG)
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
               </div>
             )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </div>
-
-          {/* Optional Google Drive Link */}
-          <div className="space-y-1.5 pt-1">
-            <label className="text-[#64748B] uppercase block text-[10px]">
-              Optional: Google Drive Share Link (Alternative proof backup)
-            </label>
-            <input
-              type="url"
-              value={driveLink}
-              onChange={(e) => setDriveLink(e.target.value)}
-              placeholder="https://drive.google.com/file/d/..."
-              className="w-full p-2.5 bg-[#0B0C10] border border-[#282B3A] text-xs text-[#F8FAFC] rounded placeholder:text-[#64748B] focus:outline-none focus:border-[#DC2626]"
-            />
           </div>
 
           {errorMsg && (
@@ -320,7 +341,7 @@ export default function CertificateRequestModal({
             </div>
           )}
 
-          {/* Actions */}
+          {/* Form Actions */}
           <div className="pt-3 border-t border-[#282B3A] flex items-center justify-end gap-3">
             <button
               type="button"
@@ -331,7 +352,7 @@ export default function CertificateRequestModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || isCompressing || (!photoDataUrl && !driveLink.trim())}
+              disabled={isSubmitting || isCompressing || (!driveLink.trim() && !photoDataUrl)}
               className="px-5 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] text-xs font-bold uppercase tracking-widest rounded shadow-lg transition-colors flex items-center gap-2"
             >
               {isSubmitting ? (
