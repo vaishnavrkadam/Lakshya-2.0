@@ -73,29 +73,47 @@ export const createBooking = onCall(async (request) => {
   const registrationRef = db.doc(appDataPath('registrations', email));
   const slotRef = db.doc(appDataPath('slots', slotId));
   const bookingId = bookingIdFor(email, vertical);
+  const otherVertical: Vertical = vertical === 'Air Rifle' ? 'Air Pistol' : 'Air Rifle';
+  const otherBookingId = bookingIdFor(email, otherVertical);
   const bookingRef = db.doc(appDataPath('bookings', bookingId));
+  const otherBookingRef = db.doc(appDataPath('bookings', otherBookingId));
   const leaderboardRef = db.doc(appDataPath('leaderboard_entries', bookingId));
 
   let result;
 
   await db.runTransaction(async (tx) => {
-    const [registrationSnap, slotSnap, bookingSnap] = await Promise.all([
+    const [registrationSnap, slotSnap, bookingSnap, otherBookingSnap] = await Promise.all([
       tx.get(registrationRef),
       tx.get(slotRef),
       tx.get(bookingRef),
+      tx.get(otherBookingRef),
     ]);
 
     if (!registrationSnap.exists) {
       throw new HttpsError('failed-precondition', 'Event registration not found.');
     }
-    if (registrationSnap.data()?.eligible !== true) {
+    const registration = registrationSnap.data()!;
+    if (registration.eligible !== true) {
       throw new HttpsError('permission-denied', 'This registration is not eligible for booking.');
     }
     if (!slotSnap.exists) {
       throw new HttpsError('not-found', 'Slot no longer exists.');
     }
     if (bookingSnap.exists && bookingSnap.data()?.status === 'confirmed') {
-      throw new HttpsError('already-exists', `You already have an ${vertical} booking.`);
+      throw new HttpsError('already-exists', `You already have an active ${vertical} booking.`);
+    }
+
+    // 1 Registration = 1 Slot Booking enforcement
+    const userVerts = Array.isArray(registration.verticals) && registration.verticals.length > 0
+      ? registration.verticals
+      : (registration.vertical === 'Both' ? ['Air Rifle', 'Air Pistol'] : [registration.vertical || 'Air Rifle']);
+    const allowedLimit = userVerts.length;
+    let activeCount = 0;
+    if (otherBookingSnap.exists && otherBookingSnap.data()?.status === 'confirmed') {
+      activeCount++;
+    }
+    if (activeCount >= allowedLimit) {
+      throw new HttpsError('resource-exhausted', 'Booking quota reached. 1 Registration permits only 1 Slot Booking.');
     }
 
     const slot = slotSnap.data()!;
@@ -109,7 +127,6 @@ export const createBooking = onCall(async (request) => {
     const ticketId = makeTicketId();
     const qrToken = makeQrToken();
     const now = Timestamp.now();
-    const registration = registrationSnap.data()!;
 
     const booking = {
       id: bookingId,

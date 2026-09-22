@@ -146,7 +146,7 @@ function MainApp() {
                 <div className="flex items-center gap-2">
                   <img src="/assets/logos/RVCE Logo.png" alt="RVCE" className="h-6 w-auto object-contain opacity-80" />
                   <img src="/assets/logos/NCC Logo.png" alt="NCC" className="h-6 w-auto object-contain opacity-80" />
-                  <img src="/assets/logos/Precihole Logo.png" alt="Precihole" className="h-5 w-auto object-contain opacity-80" />
+                  <img src="/assets/logos/GARE Logo.png" alt="GARE" className="h-5 w-auto object-contain opacity-80" />
                 </div>
               </div>
               <span className="font-mono text-xs text-[#64748B]">

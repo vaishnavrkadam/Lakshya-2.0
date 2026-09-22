@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { buildQrPayload, encodeQrPayload } from '../lib/bookingPayload';
@@ -13,21 +13,61 @@ import {
   ShieldCheck, 
   Award,
   AlertCircle,
-  Loader2
+  Loader2,
+  Lock,
+  Sprout,
+  FileCheck
 } from 'lucide-react';
-import type { Booking } from '../types/lakshya';
+import type { Booking, CertificateRequest } from '../types/lakshya';
 import { downloadCertificatePdf } from '../lib/certificates';
+import { getDocRef, onSnapshot } from '../lib/firebase';
+import { normalizeEmail } from '../config/lakshya';
+import CertificateRequestModal from './CertificateRequestModal';
 
 export default function DigitalPass({ setView }: { setView: (v: string) => void }) {
   const { currentUser, userBookings, registration, loginWithGoogle } = useAuth();
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [certRequest, setCertRequest] = useState<CertificateRequest | null>(null);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
 
   const confirmedBookings = userBookings.filter((b) => b.status === 'confirmed');
+  const checkedInBooking = confirmedBookings.find((b) => b.checkedIn);
   const hasRifle = confirmedBookings.some((b) => b.vertical === 'Air Rifle');
   const hasPistol = confirmedBookings.some((b) => b.vertical === 'Air Pistol');
 
+  // Real-time listener for certificate request status
+  useEffect(() => {
+    if (!currentUser?.email) {
+      setCertRequest(null);
+      return;
+    }
+    const cleanEmail = normalizeEmail(currentUser.email);
+    const ref = getDocRef<CertificateRequest>('certificate_requests', cleanEmail);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setCertRequest({ id: snap.id, ...snap.data() } as CertificateRequest);
+      } else {
+        setCertRequest(null);
+      }
+    });
+    return () => unsub();
+  }, [currentUser?.email]);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownload = async () => {
+    if (isDownloadingCert) return;
+    const name = registration?.name || currentUser?.displayName || 'Competitor';
+    try {
+      setIsDownloadingCert(true);
+      await downloadCertificatePdf(name);
+    } catch (e: any) {
+      alert('Failed to download certificate: ' + (e.message || e));
+    } finally {
+      setIsDownloadingCert(false);
+    }
   };
 
   if (!currentUser) {
@@ -89,35 +129,56 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
           </p>
         </div>
 
-        <div className="flex items-center gap-3 no-print">
-          <button
-            onClick={async () => {
-              if (isDownloadingCert) return;
-              const name = registration?.name || currentUser?.displayName || 'Competitor';
-              try {
-                setIsDownloadingCert(true);
-                await downloadCertificatePdf(name);
-              } catch (e: any) {
-                alert('Failed to download certificate: ' + (e.message || e));
-              } finally {
-                setIsDownloadingCert(false);
-              }
-            }}
-            disabled={isDownloadingCert}
-            className="px-4 py-2 border border-[#DC2626] bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors font-semibold shadow-sm"
-          >
-            {isDownloadingCert ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Generating Certificate...</span>
-              </>
-            ) : (
-              <>
-                <Award className="w-4 h-4 text-[#F8FAFC]" />
-                <span>[ Download Certificate ]</span>
-              </>
-            )}
-          </button>
+        <div className="flex flex-wrap items-center gap-3 no-print">
+          {/* Certificate Action based on 5-step flow */}
+          {certRequest?.status === 'Approved' ? (
+            <button
+              onClick={handleDownload}
+              disabled={isDownloadingCert}
+              className="px-4 py-2 border border-emerald-600 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors font-semibold shadow-sm"
+            >
+              {isDownloadingCert ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating Certificate...</span>
+                </>
+              ) : (
+                <>
+                  <Award className="w-4 h-4 text-[#F8FAFC]" />
+                  <span>[ Download Certificate ]</span>
+                </>
+              )}
+            </button>
+          ) : certRequest?.status === 'Request Submitted' || certRequest?.status === 'Under Review' ? (
+            <div className="px-4 py-2 border border-amber-800/80 bg-amber-950/40 text-amber-300 font-mono text-xs uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span>Under Review by Admin</span>
+            </div>
+          ) : certRequest?.status === 'Rejected' ? (
+            <button
+              onClick={() => setIsCertModalOpen(true)}
+              className="px-4 py-2 border border-red-700 bg-red-950/70 hover:bg-red-900 text-red-200 font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <span>[ Resubmit Certificate Request ]</span>
+            </button>
+          ) : checkedInBooking ? (
+            <button
+              onClick={() => setIsCertModalOpen(true)}
+              className="px-4 py-2 border border-emerald-700 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors font-bold shadow-sm"
+            >
+              <Sprout className="w-4 h-4 text-emerald-400" />
+              <span>[ Request Certificate ]</span>
+            </button>
+          ) : (
+            <div 
+              title="You must check in at the range and plant a sapling to unlock your certificate."
+              className="px-4 py-2 border border-[#282B3A] bg-[#12131A] text-[#64748B] font-mono text-xs uppercase tracking-wider flex items-center gap-2 cursor-not-allowed opacity-75"
+            >
+              <Lock className="w-4 h-4 text-[#64748B]" />
+              <span>Certificate Locked (Check-In Req.)</span>
+            </div>
+          )}
 
           <button
             onClick={handlePrint}
@@ -128,6 +189,39 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
           </button>
         </div>
       </div>
+
+      {/* Certificate Workflow Notification Banner */}
+      {certRequest?.status === 'Rejected' && (
+        <div className="bg-red-950/40 border border-red-800 p-4 rounded text-xs font-mono space-y-1 no-print">
+          <div className="text-red-300 font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            Certificate Request Returned: {certRequest.rejectionReason || 'Please upload a clearer sapling planting photo.'}
+          </div>
+          <p className="text-[#94A3B8]">
+            Click the &quot;Resubmit Certificate Request&quot; button above to submit updated sapling photo proof.
+          </p>
+        </div>
+      )}
+
+      {checkedInBooking && !certRequest && (
+        <div className="bg-emerald-950/30 border border-emerald-800/80 p-4 rounded text-xs font-mono flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 no-print">
+          <div className="space-y-0.5">
+            <div className="text-emerald-300 font-bold flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-emerald-400" />
+              You are checked in! Complete Step 4 & 5 to receive your Official Certificate
+            </div>
+            <p className="text-[#94A3B8] text-[11px]">
+              Plant your sapling, snap a photograph, and submit your request for admin verification.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsCertModalOpen(true)}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs uppercase tracking-wider font-bold shrink-0 transition-colors"
+          >
+            Request Certificate
+          </button>
+        </div>
+      )}
 
       {/* Cross-sell banner if participant only booked one discipline */}
       {(!hasRifle || !hasPistol) && (
@@ -285,6 +379,16 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
           );
         })}
       </div>
+
+      {/* Sapling & Certificate Request Modal */}
+      {(checkedInBooking || confirmedBookings[0]) && (
+        <CertificateRequestModal
+          isOpen={isCertModalOpen}
+          onClose={() => setIsCertModalOpen(false)}
+          checkedInBooking={checkedInBooking || confirmedBookings[0]}
+          existingRequest={certRequest}
+        />
+      )}
     </div>
   );
 }

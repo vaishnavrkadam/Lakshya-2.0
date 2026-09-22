@@ -11,23 +11,48 @@ import {
   LogOut, 
   ExternalLink,
   PlusCircle,
-  ShieldCheck,
-  AlertCircle,
-  Award,
-  Download,
-  Eye,
-  Loader2,
-  X
+  ShieldCheck, 
+  AlertCircle, 
+  Award, 
+  Download, 
+  Eye, 
+  Loader2, 
+  X,
+  Lock,
+  Sprout
 } from 'lucide-react';
-import { REGISTRATION_FORM_URL } from '../config/lakshya';
+import { REGISTRATION_FORM_URL, normalizeEmail } from '../config/lakshya';
 import { downloadCertificatePdf, renderCertificateToCanvas, sanitizeCertificateFilename } from '../lib/certificates';
 import { getSavedCertificateConfig } from '../config/certificateConfig';
+import { getDocRef, onSnapshot } from '../lib/firebase';
+import type { CertificateRequest, Booking } from '../types/lakshya';
+import CertificateRequestModal from './CertificateRequestModal';
 
 export default function Profile({ setView }: { setView: (v: string) => void }) {
   const { currentUser, registration, userBookings, logout, loginWithGoogle, setOnboardingOpen } = useAuth();
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
   const [showCertPreview, setShowCertPreview] = useState(false);
+  const [certRequest, setCertRequest] = useState<CertificateRequest | null>(null);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const certCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Subscribe to certificate request
+  useEffect(() => {
+    if (!currentUser?.email) {
+      setCertRequest(null);
+      return;
+    }
+    const cleanEmail = normalizeEmail(currentUser.email);
+    const ref = getDocRef<CertificateRequest>('certificate_requests', cleanEmail);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setCertRequest({ id: snap.id, ...snap.data() } as CertificateRequest);
+      } else {
+        setCertRequest(null);
+      }
+    });
+    return () => unsub();
+  }, [currentUser?.email]);
 
   useEffect(() => {
     if (showCertPreview && certCanvasRef.current) {
@@ -284,64 +309,126 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
       </div>
 
       {/* Official Participation Certificate Section */}
-      <div className="bg-[#12131A] border border-[#282B3A] p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#282B3A] pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#1A1C26] border border-[#DC2626] text-[#DC2626] rounded">
-              <Award className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#DC2626] block font-bold">
-                OFFICIAL RECOGNITION DOSSIER
-              </span>
-              <h3 className="font-headline-sm text-xl text-[#F8FAFC] uppercase font-serif">
-                Participation Certificate
-              </h3>
-            </div>
-          </div>
+      {(() => {
+        const checkedInBooking = userBookings.find((b) => b.status === 'confirmed' && b.checkedIn);
+        const isApproved = certRequest?.status === 'Approved';
+        const isPending = certRequest?.status === 'Request Submitted' || certRequest?.status === 'Under Review';
+        const isRejected = certRequest?.status === 'Rejected';
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              onClick={() => setShowCertPreview(true)}
-              className="px-3.5 py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5 text-[#64748B]" />
-              <span>Preview</span>
-            </button>
+        return (
+          <div className="bg-[#12131A] border border-[#282B3A] p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#282B3A] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-[#1A1C26] border border-[#DC2626] text-[#DC2626] rounded">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[#DC2626] block font-bold">
+                    OFFICIAL RECOGNITION DOSSIER
+                  </span>
+                  <h3 className="font-headline-sm text-xl text-[#F8FAFC] uppercase font-serif">
+                    Participation Certificate
+                  </h3>
+                </div>
+              </div>
 
-            <button
-              onClick={handleDownloadCert}
-              disabled={isDownloadingCert}
-              className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 transition-colors shadow-sm"
-            >
-              {isDownloadingCert ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Generating PDF...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
-                </>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                {isApproved ? (
+                  <>
+                    <button
+                      onClick={() => setShowCertPreview(true)}
+                      className="px-3.5 py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#64748B]" />
+                      <span>Preview</span>
+                    </button>
+
+                    <button
+                      onClick={handleDownloadCert}
+                      disabled={isDownloadingCert}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 transition-colors shadow-sm"
+                    >
+                      {isDownloadingCert ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Generating PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download PDF</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : isPending ? (
+                  <div className="px-4 py-2 bg-amber-950/40 border border-amber-800 text-amber-300 font-mono text-xs uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    <span>Under Review by Admin</span>
+                  </div>
+                ) : isRejected ? (
+                  <button
+                    onClick={() => setIsCertModalOpen(true)}
+                    className="px-4 py-2 bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-colors"
+                  >
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <span>Resubmit Sapling Proof</span>
+                  </button>
+                ) : checkedInBooking ? (
+                  <button
+                    onClick={() => setIsCertModalOpen(true)}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs uppercase tracking-wider font-bold flex items-center gap-2 transition-colors shadow-sm"
+                  >
+                    <Sprout className="w-4 h-4" />
+                    <span>[ Request Certificate ]</span>
+                  </button>
+                ) : (
+                  <div 
+                    title="Range Check-In and Sapling planting proof are required prior to requesting a certificate."
+                    className="px-4 py-2 bg-[#12131A] border border-[#282B3A] text-[#64748B] font-mono text-xs uppercase tracking-wider flex items-center gap-2 cursor-not-allowed opacity-75"
+                  >
+                    <Lock className="w-4 h-4 text-[#64748B]" />
+                    <span>Check-In Required</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between text-xs font-mono text-[#64748B] gap-2 pt-1">
+              <p>
+                {isApproved ? (
+                  <>
+                    Awarded in recognition for participation in LAKSHYA 2.0 organized by NCC RVCE × GARE.
+                    Issued to: <strong className="text-[#F8FAFC]">{registration?.name || currentUser?.displayName || 'Competitor'}</strong>
+                  </>
+                ) : isPending ? (
+                  <span className="text-amber-300/90">
+                    Your sapling planting proof is currently in the verification queue. Admin approval is required before download is permitted.
+                  </span>
+                ) : isRejected ? (
+                  <span className="text-red-300">
+                    Verification note: &quot;{certRequest?.rejectionReason || 'Please upload a clearer photograph.'}&quot; Click &quot;Resubmit Sapling Proof&quot; to update.
+                  </span>
+                ) : checkedInBooking ? (
+                  <span className="text-emerald-300/90">
+                    Range check-in verified! In accordance with Step 4 & 5, plant your sapling and upload a photograph to request your certificate.
+                  </span>
+                ) : (
+                  <span>
+                    Direct download is prohibited. Certificate dispatch follows: Registration → Slot Booking → Range Check-In → Plant Sapling → Admin Approval.
+                  </span>
+                )}
+              </p>
+
+              {isApproved && (
+                <span className="text-[11px] text-emerald-400 flex items-center gap-1 shrink-0">
+                  <CheckCircle2 className="w-3 h-3" /> Approved by Admin
+                </span>
               )}
-            </button>
+            </div>
           </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between text-xs font-mono text-[#64748B] gap-2 pt-1">
-          <p>
-            Awarded in recognition for participation in LAKSHYA 2.0 organized by NCC RVCE × GARE.
-            Issued to:{' '}
-            <strong className="text-[#F8FAFC]">
-              {registration?.name || currentUser?.displayName || 'Competitor'}
-            </strong>
-          </p>
-          <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Ready for Print Download
-          </span>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Certificate Live Preview Modal */}
       {showCertPreview && (
@@ -402,6 +489,20 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
           </div>
         </div>
       )}
+
+      {/* Sapling & Certificate Request Modal */}
+      {(() => {
+        const activeBooking = userBookings.find((b) => b.status === 'confirmed' && b.checkedIn) || userBookings.find((b) => b.status === 'confirmed');
+        if (!activeBooking) return null;
+        return (
+          <CertificateRequestModal
+            isOpen={isCertModalOpen}
+            onClose={() => setIsCertModalOpen(false)}
+            checkedInBooking={activeBooking}
+            existingRequest={certRequest}
+          />
+        );
+      })()}
     </div>
   );
 }

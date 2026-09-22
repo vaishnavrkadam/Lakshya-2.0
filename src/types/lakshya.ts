@@ -140,3 +140,33 @@ export interface LakshyaQrPayload {
   qrToken: string;
   issuedAt: string;
 }
+
+export type CertificateRequestStatus = 
+  | 'Not Eligible'
+  | 'Eligible'
+  | 'Request Submitted'
+  | 'Under Review'
+  | 'Approved'
+  | 'Rejected';
+
+export interface CertificateRequest {
+  id: string; // cleanEmail
+  participantEmail: string;
+  participantName: string;
+  registrationId?: string;
+  usn?: string;
+  college?: string;
+  vertical?: string;
+  bookingId?: string;
+  ticketId?: string;
+  checkedIn: boolean;
+  checkedInAt?: any;
+  photoUrl: string; // Compressed base64 data URL
+  driveLink?: string;
+  status: CertificateRequestStatus;
+  rejectionReason?: string;
+  requestedAt: any;
+  reviewedAt?: any;
+  reviewedBy?: string;
+  updatedAt: any;
+}

@@ -100,10 +100,32 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // System configuration
-    match /artifacts/{appId}/public/data/app_config/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Certificate requests collection (sapling photo upload & admin approvals)
+    match /artifacts/{appId}/public/data/certificate_requests/{requestId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        resource == null ||
+        resource.data.participantEmail.lower() == normalizedEmail() ||
+        requestId.lower() == normalizedEmail()
+      );
+      allow create: if signedIn() && (
+        isAdmin() ||
+        (
+          request.resource.data.participantEmail.lower() == normalizedEmail() &&
+          requestId.lower() == normalizedEmail() &&
+          request.resource.data.status in ['Request Submitted', 'Under Review'] &&
+          request.resource.data.checkedIn == true
+        )
+      );
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (
+          resource.data.participantEmail.lower() == normalizedEmail() &&
+          request.resource.data.participantEmail.lower() == normalizedEmail() &&
+          request.resource.data.status in ['Request Submitted', 'Under Review']
+        )
+      );
+      allow delete: if isAdmin();
     }
 
     // Catch-all

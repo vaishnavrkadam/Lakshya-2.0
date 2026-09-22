@@ -20,7 +20,7 @@ export function generateSlotRostersPdf(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.text(`Generated on: ${now}`, 14, 27);
-  doc.text('Organizer: NCC RVCE & Precihole Sports', 14, 32);
+  doc.text('Organizer: NCC RVCE & GARE', 14, 32);
 
   let currentY = 40;
 
@@ -189,7 +189,7 @@ export function generateOccupancyPdf(slots: Slot[], bookings: Booking[]) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.text(`Generated on: ${now}`, 14, 27);
-  doc.text('Organizer: NCC RVCE & Precihole Sports', 14, 32);
+  doc.text('Organizer: NCC RVCE & GARE', 14, 32);
 
   const activeBookings = bookings.filter((b) => b.status === 'confirmed');
 

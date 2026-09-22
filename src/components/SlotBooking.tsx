@@ -14,7 +14,6 @@ import {
   LAKSHYA_EVENT_ID, 
   DEFAULT_SLOT_CAPACITY,
   normalizeEmail, 
-  verticalSlug, 
   deterministicBookingId,
   generateTicketId,
   generateQrToken
@@ -23,15 +22,14 @@ import type { Slot, LakshyaVertical, Booking } from '../types/lakshya';
 import { 
   Calendar, 
   Clock, 
-  Users, 
   CheckCircle2, 
   AlertCircle, 
-  ChevronRight, 
   Ticket, 
   Lock, 
   ArrowRight,
   ShieldAlert,
-  Flame
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 export default function SlotBooking({ setView }: { setView: (v: string) => void }) {
@@ -44,6 +42,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<Booking | null>(null);
+  const [showCrossVerticalWarning, setShowCrossVerticalWarning] = useState<boolean>(false);
   const [selectedGender, setSelectedGender] = useState<'Male' | 'Female' | null>(
     (registration?.gender === 'Male' || registration?.gender === 'Female') ? registration.gender : null
   );
@@ -54,8 +53,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     }
   }, [registration]);
 
-  // Determine allowed verticals for logged-in competitor
-  const allowedVerticals = useMemo<LakshyaVertical[]>(() => {
+  // Determine registered verticals from the participant's intake record
+  const registeredVerticals = useMemo<LakshyaVertical[]>(() => {
     if (!registration) return ['Air Rifle', 'Air Pistol'];
     if (Array.isArray(registration.verticals) && registration.verticals.length > 0) {
       return registration.verticals;
@@ -63,30 +62,29 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     if (registration.vertical === 'Air Rifle') return ['Air Rifle'];
     if (registration.vertical === 'Air Pistol') return ['Air Pistol'];
     if (registration.vertical === 'Both') return ['Air Rifle', 'Air Pistol'];
-    return ['Air Rifle', 'Air Pistol'];
+    return ['Air Rifle'];
   }, [registration]);
 
-  const canBookRifle = allowedVerticals.includes('Air Rifle');
-  const canBookPistol = allowedVerticals.includes('Air Pistol');
+  // 1 Registration = 1 Slot Booking rule
+  // Each registered vertical represents 1 registration unit
+  const maxAllowedBookings = registeredVerticals.length;
 
-  // Automatically select the allowed vertical if only one is allowed
-  useEffect(() => {
-    if (canBookPistol && !canBookRifle && selectedVertical !== 'Air Pistol') {
-      setSelectedVertical('Air Pistol');
-    } else if (canBookRifle && !canBookPistol && selectedVertical !== 'Air Rifle') {
-      setSelectedVertical('Air Rifle');
-    }
-  }, [canBookRifle, canBookPistol]);
+  // Active confirmed bookings
+  const confirmedBookings = useMemo(() => {
+    return userBookings.filter((b) => b.status === 'confirmed');
+  }, [userBookings]);
+
+  const hasReachedBookingLimit = confirmedBookings.length >= maxAllowedBookings;
 
   // Check if current user already has a booking in selected vertical
-  const existingVerticalBooking = userBookings.find(
-    (b) => b.vertical === selectedVertical && b.status === 'confirmed'
+  const existingVerticalBooking = confirmedBookings.find(
+    (b) => b.vertical === selectedVertical
   );
 
   // Check other vertical booking status
   const otherVertical: LakshyaVertical = selectedVertical === 'Air Rifle' ? 'Air Pistol' : 'Air Rifle';
-  const existingOtherBooking = userBookings.find(
-    (b) => b.vertical === otherVertical && b.status === 'confirmed'
+  const existingOtherBooking = confirmedBookings.find(
+    (b) => b.vertical === otherVertical
   );
 
   // Real-time listener for slots in the selected vertical
@@ -123,8 +121,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     return () => unsubscribe();
   }, [selectedVertical]);
 
-  // Execute atomic booking transaction
-  const handleConfirmBooking = async () => {
+  // Trigger booking confirmation flow
+  const handleInitiateBooking = () => {
     if (!currentUser || !currentUser.email) {
       loginWithGoogle();
       return;
@@ -142,21 +140,42 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
       return;
     }
 
+    // Check if vertical differs from registered vertical: show confirmation warning
+    const isDifferentVertical = !registeredVerticals.includes(selectedVertical);
+    if (isDifferentVertical) {
+      setShowCrossVerticalWarning(true);
+      return;
+    }
+
+    executeBookingTransaction();
+  };
+
+  // Execute atomic booking transaction with backend validations
+  const executeBookingTransaction = async () => {
+    setShowCrossVerticalWarning(false);
     setIsSubmitting(true);
     setBookingError(null);
 
-    const emailKey = normalizeEmail(currentUser.email);
+    const emailKey = normalizeEmail(currentUser?.email || '');
     const bookingId = deterministicBookingId(LAKSHYA_EVENT_ID, emailKey, selectedVertical);
+    const otherBookingId = deterministicBookingId(LAKSHYA_EVENT_ID, emailKey, otherVertical);
 
-    const slotRef = getDocRef('slots', selectedSlotId);
+    const slotRef = getDocRef('slots', selectedSlotId!);
     const bookingRef = getDocRef('bookings', bookingId);
+    const otherBookingRef = getDocRef('bookings', otherBookingId);
     const regRef = getDocRef('registrations', emailKey);
     const leaderboardRef = getDocRef('leaderboard_entries', bookingId);
 
     try {
       const createdBooking = await runTransaction(db, async (transaction) => {
-        // 1. Read existing booking document
-        const bookingSnap = await transaction.get(bookingRef);
+        // 1. Read existing bookings for both disciplines
+        const [bookingSnap, otherBookingSnap, slotSnap, regSnap] = await Promise.all([
+          transaction.get(bookingRef),
+          transaction.get(otherBookingRef),
+          transaction.get(slotRef),
+          transaction.get(regRef),
+        ]);
+
         if (bookingSnap.exists()) {
           const data = bookingSnap.data();
           if (data && data.status === 'confirmed') {
@@ -164,8 +183,32 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           }
         }
 
-        // 2. Read target slot document
-        const slotSnap = await transaction.get(slotRef);
+        // Count current confirmed bookings
+        let activeBookingsCount = 0;
+        if (otherBookingSnap.exists() && otherBookingSnap.data()?.status === 'confirmed') {
+          activeBookingsCount++;
+        }
+
+        // 2. Read participant registration
+        let regData = regSnap.exists() ? regSnap.data() : (registration as any);
+        if (!regData) {
+          throw new Error("REGISTRATION_NOT_FOUND");
+        }
+        if (!regData.eligible) {
+          throw new Error("REGISTRATION_NOT_ELIGIBLE");
+        }
+
+        // Determine allowed count: 1 Registration = 1 Slot Booking
+        const userVerts: LakshyaVertical[] = Array.isArray(regData.verticals) && regData.verticals.length > 0
+          ? regData.verticals
+          : (regData.vertical === 'Both' ? ['Air Rifle', 'Air Pistol'] : [regData.vertical || 'Air Rifle']);
+        const allowedBookingsLimit = userVerts.length;
+
+        if (activeBookingsCount >= allowedBookingsLimit) {
+          throw new Error("BOOKING_LIMIT_REACHED");
+        }
+
+        // 3. Read target slot document and verify capacity
         if (!slotSnap.exists()) {
           throw new Error("SLOT_NOT_FOUND");
         }
@@ -175,32 +218,6 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
 
         if (currentBooked >= capacity) {
           throw new Error("SLOT_FULL");
-        }
-
-        // 3. Read participant registration
-        let regData = registration as any;
-        try {
-          const regSnap = await transaction.get(regRef);
-          if (regSnap.exists()) {
-            regData = regSnap.data();
-          }
-        } catch (_) {
-          // If direct get fails, fall back to session registration
-        }
-
-        if (!regData) {
-          throw new Error("REGISTRATION_NOT_FOUND");
-        }
-        if (!regData.eligible) {
-          throw new Error("REGISTRATION_NOT_ELIGIBLE");
-        }
-
-        // Enforce registered vertical on database transaction level
-        const userAllowedVerts: LakshyaVertical[] = Array.isArray(regData.verticals) && regData.verticals.length > 0
-          ? regData.verticals
-          : (regData.vertical === 'Air Rifle' || regData.vertical === 'Air Pistol' ? [regData.vertical] : ['Air Rifle', 'Air Pistol']);
-        if (!userAllowedVerts.includes(selectedVertical)) {
-          throw new Error("VERTICAL_NOT_REGISTERED");
         }
 
         // 4. Generate unique tokens
@@ -215,12 +232,12 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           registrationId: emailKey,
           emailKey,
           participantEmail: emailKey,
-          participantName: regData.name || currentUser.displayName || 'Competitor',
+          participantName: regData.name || currentUser?.displayName || 'Competitor',
           participantGender: selectedGender,
           college: regData.college || 'RVCE',
           cadetStatus: regData.cadetStatus || 'Student',
           vertical: selectedVertical,
-          slotId: selectedSlotId,
+          slotId: selectedSlotId!,
           slotDateKey: slotData.dateKey,
           slotDateLabel: slotData.dateLabel || slotData.dateKey,
           slotTimeLabel: slotData.timeLabel || '',
@@ -278,8 +295,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         setBookingError("This slot just filled up! Please select another time slot.");
       } else if (err.message === "ALREADY_BOOKED_VERTICAL") {
         setBookingError(`You already have an active confirmed booking for ${selectedVertical}.`);
-      } else if (err.message === "VERTICAL_NOT_REGISTERED") {
-        setBookingError(`You are only registered for ${allowedVerticals.join(' and ')}. You cannot book ${selectedVertical}.`);
+      } else if (err.message === "BOOKING_LIMIT_REACHED") {
+        setBookingError(`Booking limit reached. Each registration permits only 1 slot booking. You have already used your allocated slot.`);
       } else if (err.message === "REGISTRATION_NOT_FOUND") {
         setBookingError("Your email was not found in the approved registrations roster.");
       } else if (err.message === "REGISTRATION_NOT_ELIGIBLE") {
@@ -312,69 +329,88 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
             Select Competition Slot
           </h1>
           <p className="font-mono text-xs text-[#64748B] mt-1">
-            Official 10M electronic target range · 60-minute firing relay sessions
+            Official 10M electronic target range · 60-minute firing relay sessions · First-Come, First-Served
           </p>
         </div>
 
-        {/* Vertical Switcher Tabs */}
-        <div className="inline-flex p-1 bg-[#12131A] rounded-none border border-[#282B3A]">
+        {/* Vertical Switcher Tabs - Both Verticals Always Selectable */}
+        <div className="inline-flex p-1 bg-[#12131A] rounded border border-[#282B3A]">
           <button
             onClick={() => {
-              if (!canBookRifle) return;
               setSelectedVertical('Air Rifle');
               setBookingSuccess(null);
               setBookingError(null);
             }}
-            disabled={!canBookRifle}
-            className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all ${
+            className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all rounded ${
               selectedVertical === 'Air Rifle'
                 ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow-sm'
-                : !canBookRifle
-                ? 'text-[#64748B]/40 cursor-not-allowed'
                 : 'text-[#64748B] hover:text-[#F8FAFC]'
             }`}
           >
-            Air Rifle (40 Lanes) {!canBookRifle && '[Not Registered]'}
+            Air Rifle (40 Lanes)
           </button>
           <button
             onClick={() => {
-              if (!canBookPistol) return;
               setSelectedVertical('Air Pistol');
               setBookingSuccess(null);
               setBookingError(null);
             }}
-            disabled={!canBookPistol}
-            className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all ${
+            className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-all rounded ${
               selectedVertical === 'Air Pistol'
                 ? 'bg-[#DC2626] text-[#F8FAFC] font-bold shadow-sm'
-                : !canBookPistol
-                ? 'text-[#64748B]/40 cursor-not-allowed'
                 : 'text-[#64748B] hover:text-[#F8FAFC]'
             }`}
           >
-            Air Pistol (16 Lanes) {!canBookPistol && '[Not Registered]'}
+            Air Pistol (16 Lanes)
           </button>
         </div>
       </div>
 
       {/* Registered discipline status notice */}
-      {currentUser && registration && (!canBookRifle || !canBookPistol) && (
-        <div className="bg-[#12131A] border border-[#282B3A] p-3 text-xs font-mono text-[#64748B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <span>
-            [ REGISTERED CATEGORY ]: You are authorized to book slots for{' '}
+      {currentUser && registration && (
+        <div className="bg-[#12131A] border border-[#282B3A] p-4 text-xs font-mono text-[#94A3B8] rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div>
+            <span className="text-[#64748B] uppercase font-bold">[ REGISTRATION STATUS ]:</span>{' '}
+            Registered for{' '}
             <strong className="text-[#DC2626]">
-              {canBookRifle && canBookPistol ? 'Air Rifle and Air Pistol' : canBookRifle ? 'Air Rifle only' : 'Air Pistol only'}
+              {registeredVerticals.join(' and ')}
             </strong>.
+            <span className="ml-2 text-[#CBD5E1]">
+              You may book any available vertical ({confirmedBookings.length} of {maxAllowedBookings} slot bookings used).
+            </span>
+          </div>
+          <span className="text-[11px] font-semibold text-[#DC2626]">
+            Rule: 1 Registration = 1 Slot Booking
           </span>
-          <span className="text-[10px] text-[#64748B]">
-            Dual competitors can switch tabs to book both disciplines independently.
-          </span>
+        </div>
+      )}
+
+      {/* Limit Reached Banner */}
+      {hasReachedBookingLimit && !bookingSuccess && (
+        <div className="bg-[#12131A] border border-amber-500/50 p-5 rounded space-y-3">
+          <div className="flex items-center gap-2.5 text-amber-400 font-mono text-xs font-bold uppercase">
+            <AlertCircle className="w-4 h-4" />
+            <span>Allocation Quota Consumed</span>
+          </div>
+          <p className="font-mono text-xs text-[#94A3B8]">
+            You have already confirmed your allocated slot ({confirmedBookings.length} of {maxAllowedBookings} booking limit). 
+            Each registration permits exactly 1 slot booking.
+          </p>
+          <div className="pt-1">
+            <button
+              onClick={() => setView('digital-pass')}
+              className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 rounded"
+            >
+              <Ticket className="w-3.5 h-3.5" />
+              <span>[ View My Participant Pass ]</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* Auth / Eligibility Alerts */}
       {!currentUser && (
-        <div className="bg-[#12131A] border border-[#282B3A] p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-[#12131A] border border-[#282B3A] p-5 flex flex-col sm:flex-row items-center justify-between gap-4 rounded">
           <div className="flex items-center gap-3">
             <Lock className="w-5 h-5 text-[#F59E0B]" />
             <div className="text-xs text-[#F8FAFC]/90">
@@ -383,7 +419,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           </div>
           <button
             onClick={loginWithGoogle}
-            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-colors shrink-0"
+            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-colors shrink-0 rounded"
           >
             [ Sign In with Google ]
           </button>
@@ -391,7 +427,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
       )}
 
       {currentUser && !registration && (
-        <div className="bg-red-950/40 border border-red-800/60 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-red-950/40 border border-red-800/60 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 rounded">
           <div className="flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
             <div className="text-xs text-red-200 space-y-1">
@@ -401,7 +437,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           </div>
           <button
             onClick={() => setOnboardingOpen(true)}
-            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold shrink-0"
+            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold shrink-0 rounded"
           >
             [ Complete Intake Form ]
           </button>
@@ -410,7 +446,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
 
       {/* Success Notification Banner */}
       {bookingSuccess && (
-        <div className="bg-[#12131A] border border-emerald-500/50 p-6 space-y-4">
+        <div className="bg-[#12131A] border border-emerald-500/50 p-6 space-y-4 rounded">
           <div className="flex items-center gap-3 text-emerald-400">
             <CheckCircle2 className="w-6 h-6 shrink-0" />
             <div>
@@ -421,7 +457,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
             </div>
           </div>
 
-          <div className="bg-[#0B0C10] p-4 border border-[#282B3A] flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-[#0B0C10] p-4 border border-[#282B3A] flex flex-wrap items-center justify-between gap-4 rounded">
             <div>
               <span className="font-mono text-[10px] uppercase text-[#64748B] block">Assigned Ticket ID</span>
               <span className="font-mono text-xl font-bold text-[#F8FAFC]">{bookingSuccess.ticketId}</span>
@@ -429,22 +465,11 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setView('digital-pass')}
-                className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2"
+                className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 rounded"
               >
                 <Ticket className="w-3.5 h-3.5" />
                 <span>[ View Participant Pass ]</span>
               </button>
-              {!existingOtherBooking && (
-                <button
-                  onClick={() => {
-                    setSelectedVertical(otherVertical);
-                    setBookingSuccess(null);
-                  }}
-                  className="px-4 py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider"
-                >
-                  Book {otherVertical} Slot
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -452,12 +477,12 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
 
       {/* Existing Booking in this Vertical */}
       {existingVerticalBooking && !bookingSuccess && (
-        <div className="bg-[#12131A] border border-[#282B3A] p-6 space-y-4">
+        <div className="bg-[#12131A] border border-[#282B3A] p-6 space-y-4 rounded">
           <div className="flex items-center justify-between border-b border-[#282B3A] pb-3">
             <span className="font-mono text-xs uppercase text-emerald-400 font-semibold flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4" /> Active Allocation in {selectedVertical}
             </span>
-            <span className="font-mono text-[11px] bg-[#1A1C26] px-2.5 py-0.5 border border-[#282B3A] text-[#64748B]">
+            <span className="font-mono text-[11px] bg-[#1A1C26] px-2.5 py-0.5 border border-[#282B3A] text-[#64748B] rounded">
               Max 1 Booking / Vertical
             </span>
           </div>
@@ -474,7 +499,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
             </div>
             <div>
               <span className="font-mono text-[10px] uppercase text-[#64748B] block">Range Status</span>
-              <span className={`font-mono text-xs px-2 py-0.5 inline-block mt-0.5 ${
+              <span className={`font-mono text-xs px-2 py-0.5 inline-block mt-0.5 rounded ${
                 existingVerticalBooking.checkedIn 
                   ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800' 
                   : 'bg-amber-950/60 text-amber-400 border border-amber-800'
@@ -487,32 +512,24 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
           <div className="pt-2 flex items-center gap-3">
             <button
               onClick={() => setView('digital-pass')}
-              className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2"
+              className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold flex items-center gap-2 rounded"
             >
               <Ticket className="w-3.5 h-3.5" />
               <span>[ Open Participant Pass ]</span>
             </button>
-            {!existingOtherBooking && (
-              <button
-                onClick={() => setSelectedVertical(otherVertical)}
-                className="px-4 py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider"
-              >
-                Book {otherVertical} Slot
-              </button>
-            )}
           </div>
         </div>
       )}
 
-      {/* Available Slots Grid (Only when not already booked in this vertical) */}
-      {!existingVerticalBooking && (
+      {/* Available Slots Grid (Only when not already booked in this vertical and quota not exceeded) */}
+      {!existingVerticalBooking && !hasReachedBookingLimit && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <span className="font-mono text-xs uppercase tracking-wider text-[#64748B]">
               Scheduled {selectedVertical} Firing Relays
             </span>
             <span className="font-mono text-xs text-[#DC2626]">
-              Capacity: {selectedVertical === 'Air Rifle' ? '18' : '6'} competitors / relay
+              Capacity: {selectedVertical === 'Air Rifle' ? '40' : '16'} competitors / relay
             </span>
           </div>
 
@@ -521,7 +538,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               TELEMETRY: SYNCHRONIZING FIRING SCHEDULES...
             </div>
           ) : slots.length === 0 ? (
-            <div className="bg-[#12131A] border border-[#282B3A] p-10 text-center space-y-3">
+            <div className="bg-[#12131A] border border-[#282B3A] p-10 text-center space-y-3 rounded">
               <Calendar className="w-10 h-10 text-[#64748B] mx-auto opacity-40" />
               <p className="font-headline-sm text-lg text-[#F8FAFC] uppercase">No Range Slots Published Yet</p>
               <p className="font-mono text-xs text-[#64748B] max-w-md mx-auto">
@@ -556,7 +573,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                             setSelectedSlotId(slot.id);
                             setBookingError(null);
                           }}
-                          className={`p-4 border text-left transition-all relative ${
+                          className={`p-4 border text-left transition-all relative rounded ${
                             isSelected
                               ? 'bg-[#1A1C26] border-[#DC2626] shadow-[0_0_15px_rgba(220,38,38,0.3)] scale-[1.01]'
                               : isFull
@@ -571,7 +588,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                               <Clock className="w-3.5 h-3.5" />
                               {slot.timeLabel}
                             </span>
-                            <span className={`font-mono text-[10px] px-1.5 py-0.5 uppercase tracking-wider font-semibold ${
+                            <span className={`font-mono text-[10px] px-1.5 py-0.5 uppercase tracking-wider font-semibold rounded ${
                               isFull 
                                 ? 'bg-red-950/60 text-red-400 border border-red-800' 
                                 : isSelected 
@@ -591,7 +608,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                             </div>
 
                             {/* Tactical progress bar */}
-                            <div className="w-full bg-[#0B0C10] h-1.5 border border-[#282B3A] overflow-hidden">
+                            <div className="w-full bg-[#0B0C10] h-1.5 border border-[#282B3A] overflow-hidden rounded-full">
                               <div
                                 className={`h-full transition-all ${
                                   isFull ? 'bg-[#EF4444]' : isSelected ? 'bg-[#DC2626]' : 'bg-[#E51A1A]'
@@ -611,9 +628,9 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
 
           {/* Action confirmation bottom bar */}
           {selectedSlotId && (
-            <div className="sticky bottom-4 z-30 bg-[#12131A]/95 backdrop-blur-xl border border-[#DC2626] p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+            <div className="sticky bottom-4 z-30 bg-[#12131A]/95 backdrop-blur-xl border border-[#DC2626] p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 rounded animate-fade-in">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[#DC2626]">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[#DC2626] font-bold">
                   TARGET RELAY SELECTED
                 </div>
                 <div className="font-mono text-base font-bold text-[#F8FAFC]">
@@ -660,7 +677,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
                 </div>
 
                 {bookingError && (
-                  <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800">
+                  <div className="font-mono text-xs text-[#EF4444] flex items-center gap-1.5 bg-red-950/40 px-3 py-1.5 border border-red-800 rounded">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{bookingError}</span>
                   </div>
@@ -670,14 +687,14 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <button
                   onClick={() => setSelectedSlotId(null)}
-                  className="px-4 py-2 border border-[#282B3A] hover:bg-[#1A1C26] font-mono text-xs text-[#64748B] hover:text-[#F8FAFC] uppercase tracking-wider transition-colors"
+                  className="px-4 py-2 border border-[#282B3A] hover:bg-[#1A1C26] font-mono text-xs text-[#64748B] hover:text-[#F8FAFC] uppercase tracking-wider transition-colors rounded"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={isSubmitting}
-                  onClick={handleConfirmBooking}
-                  className="px-6 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-all flex items-center gap-2"
+                  onClick={handleInitiateBooking}
+                  className="px-6 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-all flex items-center gap-2 rounded"
                 >
                   {isSubmitting ? (
                     <span>CONFIRMING TRANSACTION...</span>
@@ -691,6 +708,58 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Confirmation Warning Modal when booking a vertical different from registered vertical */}
+      {showCrossVerticalWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#12131A] border-2 border-[#DC2626] max-w-lg w-full p-6 space-y-5 rounded shadow-2xl relative">
+            <div className="flex items-start justify-between gap-3 border-b border-[#282B3A] pb-3">
+              <div className="flex items-center gap-2.5 text-[#F59E0B]">
+                <AlertTriangle className="w-6 h-6 text-[#DC2626]" />
+                <h3 className="font-headline-sm text-lg font-serif text-[#F8FAFC] uppercase">
+                  Discipline Switch Warning
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCrossVerticalWarning(false)}
+                className="text-[#64748B] hover:text-[#F8FAFC]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-[#0B0C10] border border-[#282B3A] space-y-3 font-mono text-xs rounded">
+              <p className="text-[#F8FAFC] leading-relaxed text-sm">
+                You registered for <strong className="text-[#DC2626]">{registeredVerticals.join(' / ')}</strong>, but you are attempting to book an <strong className="text-[#DC2626]">{selectedVertical}</strong> slot.
+              </p>
+              <p className="text-[#94A3B8] leading-relaxed">
+                Are you sure you want to continue?
+              </p>
+              <div className="text-[11px] text-[#64748B] border-t border-[#282B3A] pt-2">
+                Note: 1 Registration = 1 Slot Booking. Confirming this slot will use your registration quota.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCrossVerticalWarning(false)}
+                className="px-4 py-2 border border-[#282B3A] hover:bg-[#1A1C26] font-mono text-xs uppercase tracking-wider text-[#64748B] hover:text-[#F8FAFC] rounded"
+              >
+                Go Back / Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={executeBookingTransaction}
+                className="px-5 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg transition-colors rounded"
+              >
+                {isSubmitting ? 'Confirming...' : 'Yes, Continue'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

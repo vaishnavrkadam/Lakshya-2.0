@@ -4,18 +4,15 @@ import {
   Target, 
   Ticket, 
   Trophy, 
-  Calendar, 
-  MapPin, 
-  Award, 
-  ShieldCheck, 
-  Flame, 
+  Crosshair, 
+  ArrowDown, 
+  Maximize2,
   ChevronRight, 
   ChevronLeft,
-  X, 
-  Crosshair, 
-  CheckCircle2, 
-  ArrowDown, 
-  Maximize2 
+  X,
+  Phone,
+  Mail,
+  HelpCircle
 } from 'lucide-react';
 
 interface WeaponSpec {
@@ -264,49 +261,10 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
   };
 
   const currentWeapon = SPONSOR_WEAPONS[activeIdx];
-  const nextWeapon = SPONSOR_WEAPONS[(activeIdx + 1) % SPONSOR_WEAPONS.length];
 
   return (
     <div className="bg-[#0B0C10] text-[#E0E0E0] min-h-screen">
-      {/* Institutional Top Bar (Matching Poster Header) */}
-      <section className="border-b border-[#222329] bg-[#0E0F14] py-3 text-center px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-mono">
-          <div className="text-left">
-            <div className="text-[10px] tracking-widest uppercase text-[#888890]">
-              Rashtreeya Sikshana Samithi Trust
-            </div>
-            <div className="font-semibold text-white tracking-wide">
-              RV COLLEGE OF ENGINEERING
-            </div>
-            <div className="text-[10px] text-[#A0A0AA]">
-              2/2 COY 6 KARNATAKA BATTALION NCC · BANGALORE 'A' GROUP KAR & GOA DIRECTORATE
-            </div>
-          </div>
-
-          {/* Co-Branding Title */}
-          <div className="flex items-center gap-3 bg-[#17181F] px-4 py-1.5 rounded-full border border-[#2D2E36]">
-            <span className="font-bold tracking-wider text-white">NCC RVCE</span>
-            <span className="text-[#E51A1A] font-extrabold text-sm">✕</span>
-            <div className="flex items-center gap-1.5">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M18 6H9M18 6V15" />
-                <circle cx="12" cy="12" r="9" strokeOpacity="0.3" />
-              </svg>
-              <span className="font-bold tracking-widest text-[#E51A1A]">GARE</span>
-            </div>
-          </div>
-
-          {/* Company Legal Name */}
-          <div className="text-right hidden lg:block">
-            <div className="text-[9px] uppercase tracking-widest text-[#888890]">Official Industrial Partner</div>
-            <div className="text-xs font-semibold text-white">
-              Gandiva Aero-pneumatic Research and Equipments Pvt Ltd
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Hero Section: Centered Poster Typography & Target Reticle */}
+      {/* HERO SECTION: Centered Poster Typography & Co-Branded Presentation */}
       <section className="relative overflow-hidden py-16 sm:py-24 border-b border-[#222329] flex flex-col items-center justify-center text-center">
         {/* Concentric Target Background Rings */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
@@ -330,13 +288,9 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
 
         {/* Center Content Box */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="inline-block">
-            <span className="text-xs sm:text-sm font-mono tracking-[0.35em] text-[#B0B0BA] uppercase">
-              PRESENTS
-            </span>
-          </div>
-
-          <div className="space-y-2 select-none">
+          
+          {/* Main Title & Subtitle */}
+          <div className="space-y-3 select-none">
             <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter uppercase font-sans drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]">
               <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 LAKSHYA
@@ -351,8 +305,41 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             </p>
           </div>
 
-          {/* EXACTLY 3 PRIMARY CENTER ACTION BUTTONS */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
+          {/* Presented by NCC RVCE & GARE (with integrated logos) */}
+          <div className="pt-2 pb-1 flex flex-wrap items-center justify-center gap-3 sm:gap-6 bg-[#12131A]/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-[#282B3A] max-w-fit mx-auto shadow-lg">
+            <span className="font-mono text-xs sm:text-sm text-[#94A3B8] uppercase tracking-wider">
+              Presented by
+            </span>
+
+            {/* NCC RVCE Logo & Label */}
+            <div className="flex items-center gap-2">
+              <img 
+                src="/assets/logos/NCC Logo.png" 
+                alt="NCC RVCE Logo" 
+                className="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(220,38,38,0.4)]"
+              />
+              <span className="font-mono text-xs sm:text-sm font-bold text-[#F8FAFC] tracking-wider uppercase">
+                NCC RVCE
+              </span>
+            </div>
+
+            <span className="text-[#DC2626] font-bold text-sm">✕</span>
+
+            {/* GARE Logo & Label */}
+            <div className="flex items-center gap-2">
+              <img 
+                src="/assets/logos/GARE Logo.png" 
+                alt="GARE Logo" 
+                className="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.2)]"
+              />
+              <span className="font-mono text-xs sm:text-sm font-bold text-[#E51A1A] tracking-widest uppercase">
+                GARE
+              </span>
+            </div>
+          </div>
+
+          {/* 3 PRIMARY CENTER ACTION BUTTONS */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
             {/* Button 1: Registering / Booking Slot */}
             <button
               onClick={handleBookingCta}
@@ -382,33 +369,9 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
           </div>
 
           {/* Scroll Down Indicator */}
-          <div className="pt-8 text-xs font-mono text-[#888892] flex items-center justify-center gap-2 animate-bounce">
+          <div className="pt-6 text-xs font-mono text-[#888892] flex items-center justify-center gap-2 animate-bounce">
             <ArrowDown className="w-4 h-4 text-[#E51A1A]" />
             <span>Scroll down to inspect official sponsor rifles & weapons</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Sponsor Company Banner */}
-      <section className="bg-[#101117] py-6 border-b border-[#222329]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#1C1D27] border border-[#2D2E3B] flex items-center justify-center text-[#E51A1A]">
-              <Target className="w-7 h-7" />
-            </div>
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#8E909E] block">
-                Official Shooting Technology Partner
-              </span>
-              <h3 className="font-bold text-lg text-white">
-                Gandiva Aero-pneumatic Research and Equipments Pvt Ltd
-              </h3>
-            </div>
-          </div>
-
-          <div className="text-xs font-mono text-[#A0A2B0] text-center md:text-right">
-            <span>Indigenous PCP Match Engineering · Bangalore, India</span>
-            <div className="text-[11px] text-[#808290] mt-0.5">Featuring Precihole Sports Olympic Range Standards</div>
           </div>
         </div>
       </section>
@@ -570,7 +533,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
         </div>
       </section>
 
-      {/* DETAILED BLUEPRINT MODAL: Single Weapon Specifications (With ONLY Close Action) */}
+      {/* DETAILED BLUEPRINT MODAL: Single Weapon Specifications */}
       {selectedWeapon && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
@@ -680,38 +643,77 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
         </div>
       )}
 
-      {/* Safety and Range Protocols */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-[#222329]">
-        <div className="bg-[#12131A] border border-[#262733] rounded-2xl p-6 sm:p-10 space-y-6">
-          <div className="flex items-center gap-3 border-b border-[#22232E] pb-4">
-            <ShieldCheck className="w-7 h-7 text-[#E51A1A]" />
+      {/* 1. FOR QUERIES SECTION: Clean, styled, and fully responsive */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-[#222329]">
+        <div className="bg-[#12131A] border border-[#282B3A] rounded-xl p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden">
+          {/* Subtle accent bar on top of card */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#DC2626] to-transparent"></div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#282B3A] pb-4">
             <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight font-sans">
-                Range Safety & Firing Rules
-              </h3>
-              <p className="text-xs font-mono text-[#8E909E]">
-                Supervised by Certified NCC Range Safety Officers (RSO)
-              </p>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#DC2626] font-bold flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4" />
+                EVENT SUPPORT & COORDINATION
+              </span>
+              <h2 className="font-headline-sm text-2xl sm:text-3xl text-[#F8FAFC] uppercase font-serif mt-1">
+                For Queries
+              </h2>
             </div>
+            <span className="text-xs font-mono text-[#64748B]">
+              NCC RVCE Event Directorate
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-mono text-[#A0A2B0]">
-            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
-              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 01</span>
-              <p className="text-white font-semibold">Muzzle Discipline</p>
-              <p className="text-[11px] text-[#7C7E8E]">All barrels must remain downrange towards the electronic targets at all times.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            {/* Contact 1 */}
+            <div className="bg-[#0B0C10] border border-[#282B3A] p-4 rounded-lg space-y-1.5 hover:border-[#DC2626]/60 transition-colors">
+              <div className="text-[#64748B] text-[10px] uppercase tracking-wider font-semibold">
+                Cadet Senior Under Officer
+              </div>
+              <div className="text-[#F8FAFC] font-bold text-sm">
+                CSUO Nandan Naniyappa
+              </div>
+              <a 
+                href="tel:+917676707058"
+                className="inline-flex items-center gap-2 text-[#DC2626] hover:text-[#E51A1A] font-semibold text-xs pt-1 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>+91 7676707058</span>
+              </a>
             </div>
 
-            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
-              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 02</span>
-              <p className="text-white font-semibold">Trigger Finger Safety</p>
-              <p className="text-[11px] text-[#7C7E8E]">Finger remains outside the trigger guard until the Chief Range Officer calls "COMMENCE FIRING".</p>
+            {/* Contact 2 */}
+            <div className="bg-[#0B0C10] border border-[#282B3A] p-4 rounded-lg space-y-1.5 hover:border-[#DC2626]/60 transition-colors">
+              <div className="text-[#64748B] text-[10px] uppercase tracking-wider font-semibold">
+                Senior Under Officer
+              </div>
+              <div className="text-[#F8FAFC] font-bold text-sm">
+                SUO Jai Surya
+              </div>
+              <a 
+                href="tel:+917899916500"
+                className="inline-flex items-center gap-2 text-[#DC2626] hover:text-[#E51A1A] font-semibold text-xs pt-1 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>+91 7899916500</span>
+              </a>
             </div>
 
-            <div className="space-y-2 bg-[#0B0C10] p-4 rounded-xl border border-[#22232E]">
-              <span className="text-[#E51A1A] font-bold block uppercase">Protocol 03</span>
-              <p className="text-white font-semibold">Live Pellet Handling</p>
-              <p className="text-[11px] text-[#7C7E8E]">Match grade .177 pellets are issued on the firing lane. Unauthorized pellets are strictly forbidden.</p>
+            {/* Email Contact */}
+            <div className="bg-[#0B0C10] border border-[#282B3A] p-4 rounded-lg space-y-1.5 hover:border-[#DC2626]/60 transition-colors">
+              <div className="text-[#64748B] text-[10px] uppercase tracking-wider font-semibold">
+                Official Helpdesk Email
+              </div>
+              <div className="text-[#F8FAFC] font-bold text-sm">
+                Email
+              </div>
+              <a 
+                href="mailto:nccrvce@rvce.edu.in"
+                className="inline-flex items-center gap-2 text-[#DC2626] hover:text-[#E51A1A] font-semibold text-xs pt-1 transition-colors break-all"
+              >
+                <Mail className="w-3.5 h-3.5 shrink-0" />
+                <span>nccrvce@rvce.edu.in</span>
+              </a>
             </div>
           </div>
         </div>

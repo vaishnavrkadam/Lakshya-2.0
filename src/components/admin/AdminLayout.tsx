@@ -28,7 +28,7 @@ export default function AdminLayout({ currentTab, setTab, children }: AdminLayou
     { id: 'allocations', label: 'Manual Allocation', icon: UserPlus },
     { id: 'slots', label: 'Slot Schedules', icon: Calendar },
     { id: 'registrations', label: 'Registrations', icon: Users },
-    { id: 'certificates', label: 'Certificates', icon: Award },
+    { id: 'certificates', label: 'Grant Certificates', icon: Award },
     { id: 'scan', label: 'QR Scan Check-in', icon: ScanLine },
     { id: 'scoring', label: 'Live Scoring', icon: Trophy },
     { id: 'reports', label: 'PDF Reports', icon: FileText },

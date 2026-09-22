@@ -20,110 +20,162 @@ interface HeaderProps {
   setView: (v: string) => void;
 }
 
-interface NavItem {
-  id: string;
-  label: string;
-  icon: any;
-  adminOnly?: boolean;
-}
-
 export default function Header({ currentView, setView }: HeaderProps) {
   const { currentUser, registration, isAdmin, loginWithGoogle, logout, setOnboardingOpen } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems: NavItem[] = [
-    { id: 'overview', label: 'Home', icon: Home },
-    { id: 'slot-booking', label: 'Slot Allocation', icon: Calendar },
-    { id: 'digital-pass', label: 'Participant Pass', icon: Ticket },
-    { id: 'live-leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'profile', label: 'Profile', icon: User },
-  ];
-
-  if (isAdmin) {
-    navItems.push({ id: 'admin', label: 'Admin Panel', icon: Shield, adminOnly: true });
-  }
 
   const handleNavClick = (id: string) => {
     setView(id);
     setMobileMenuOpen(false);
   };
 
+  const isHomeActive = currentView === 'overview';
+  const isSlotActive = currentView === 'slot-booking';
+  const isPassActive = currentView === 'digital-pass';
+  const isLeaderboardActive = currentView === 'live-leaderboard';
+  const isProfileActive = currentView === 'profile';
+  const isAdminActive = currentView === 'admin';
+
   return (
-    <header className="sticky top-0 left-0 w-full z-50 bg-[#0B0C10]/95 backdrop-blur-xl border-b border-[#282B3A] shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-16 flex items-center justify-between">
-          {/* Brand & Logos */}
-          <div className="flex items-center gap-3 sm:gap-6">
-            <button 
+    <header className="sticky top-0 left-0 w-full z-50 bg-[#0B0C10] border-b border-[#282B3A]/80 shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="h-20 flex items-center justify-between gap-2 lg:gap-4">
+          
+          {/* LEFT GROUP: RVCE Logo + Text + Divider + Left Nav Items */}
+          <div className="flex items-center gap-3 xl:gap-5 min-w-0">
+            {/* RVCE Logo & Title */}
+            <button
               onClick={() => handleNavClick('overview')}
-              className="flex items-center gap-2.5 text-left group"
+              className="flex items-center gap-2.5 text-left shrink-0 group focus:outline-none"
+              title="RV College of Engineering, Bengaluru"
             >
-              <span className="w-2 h-2 rounded-full bg-[#E51A1A] animate-pulse"></span>
-              <div className="flex flex-col">
-                <span className="font-headline-md text-xl sm:text-2xl text-[#F8FAFC] tracking-wider leading-none uppercase font-serif">
-                  LAKSHYA <span className="text-[#E51A1A]">2.0</span>
+              <img 
+                src="/assets/logos/RVCE Logo.png" 
+                alt="RV College of Engineering" 
+                className="h-10 sm:h-12 w-auto object-contain brightness-110"
+              />
+              <div className="flex flex-col leading-tight select-none">
+                <span className="font-sans font-bold text-[10px] sm:text-[11px] tracking-wider text-[#F8FAFC] uppercase">
+                  RV COLLEGE
                 </span>
-                <span className="font-mono text-[9px] text-[#64748B] tracking-widest uppercase mt-0.5">
-                  NCC RVCE × GARE
+                <span className="font-sans text-[8px] sm:text-[9px] tracking-wider text-[#CBD5E1] uppercase">
+                  OF ENGINEERING
+                </span>
+                <span className="font-sans text-[7px] sm:text-[8px] tracking-widest text-[#94A3B8] uppercase">
+                  BENGALURU
                 </span>
               </div>
             </button>
 
-            {/* Official Partner Logos */}
-            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-[#282B3A]">
-              <img 
-                src="/assets/logos/RVCE Logo.png" 
-                alt="RVCE Logo" 
-                className="h-8 w-auto object-contain opacity-90"
-              />
-              <img 
-                src="/assets/logos/NCC Logo.png" 
-                alt="NCC Logo" 
-                className="h-8 w-auto object-contain opacity-90"
-              />
-              <img 
-                src="/assets/logos/Precihole Logo.png" 
-                alt="Precihole Logo" 
-                className="h-6 w-auto object-contain opacity-85 pl-1.5 border-l border-[#282B3A]"
-              />
-              <div className="pl-2 border-l border-[#282B3A] flex items-center" title="Gandiva Aero-pneumatic Research and Equipments">
-                <span className="text-[10px] font-mono font-bold text-[#E51A1A] tracking-wider">GARE</span>
-              </div>
-            </div>
+            {/* Red Vertical Divider */}
+            <div className="hidden lg:block h-8 w-[1px] bg-[#DC2626]/70 shadow-[0_0_8px_rgba(220,38,38,0.5)] shrink-0" />
+
+            {/* Left Nav: HOME, SLOT ALLOCATION, PARTICIPANT PASS */}
+            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
+              {/* HOME (Active styling: rounded border button with red outline) */}
+              <button
+                onClick={() => handleNavClick('overview')}
+                className={`font-mono text-xs uppercase tracking-wider transition-all px-3 py-1.5 rounded ${
+                  isHomeActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                HOME
+              </button>
+
+              <button
+                onClick={() => handleNavClick('slot-booking')}
+                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                  isSlotActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                SLOT ALLOCATION
+              </button>
+
+              <button
+                onClick={() => handleNavClick('digital-pass')}
+                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                  isPassActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                PARTICIPANT PASS
+              </button>
+            </nav>
           </div>
 
-          {/* Desktop Navigation Strip */}
-          {isAdmin ? (
-            <div className="hidden lg:flex items-center gap-2">
-              <span className="font-mono text-xs px-3 py-1 bg-red-950/40 border border-red-800 text-red-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>OFFICER COMMAND TERMINAL ACTIVE</span>
-              </span>
-            </div>
-          ) : (
-            <nav className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => {
-                const isActive = currentView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-all rounded ${
-                      isActive
-                        ? 'bg-[#12131A] text-[#F8FAFC] border border-[#282B3A] font-semibold shadow-sm'
-                        : 'text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#12131A]/60'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-          )}
+          {/* CENTER GROUP: GARE Logo */}
+          <div className="flex items-center justify-center shrink-0 px-1 sm:px-3">
+            <button
+              onClick={() => handleNavClick('overview')}
+              className="flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
+              title="Gandiva Aero-pneumatic Research and Equipments"
+            >
+              <img 
+                src="/assets/logos/GARE Logo.png" 
+                alt="GARE - Precision & Accuracy" 
+                className="h-10 sm:h-12 md:h-14 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]"
+              />
+            </button>
+          </div>
 
-          {/* Action Trigger & User Profile */}
-          <div className="flex items-center gap-3">
-            {/* Quick Register Trigger for Non-Admin */}
+          {/* RIGHT GROUP: Right Nav Items + Divider + NCC Logo + Register Now + Sign In */}
+          <div className="flex items-center gap-2.5 xl:gap-4 shrink-0">
+            {/* Right Nav: LEADERBOARD, PROFILE */}
+            <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
+              <button
+                onClick={() => handleNavClick('live-leaderboard')}
+                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                  isLeaderboardActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                LEADERBOARD
+              </button>
+
+              <button
+                onClick={() => handleNavClick('profile')}
+                className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded ${
+                  isProfileActive
+                    ? 'border border-[#DC2626] text-[#F8FAFC] font-bold shadow-[0_0_12px_rgba(220,38,38,0.4)] bg-[#12131A]'
+                    : 'text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/60'
+                }`}
+              >
+                PROFILE
+              </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => handleNavClick('admin')}
+                  className={`font-mono text-xs uppercase tracking-wider transition-all px-2.5 py-1.5 rounded flex items-center gap-1 text-[#F59E0B] border border-[#F59E0B]/50 hover:bg-[#F59E0B]/10 ${
+                    isAdminActive ? 'bg-[#F59E0B]/20 font-bold' : ''
+                  }`}
+                  title="Admin Command Suite"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>ADMIN</span>
+                </button>
+              )}
+            </nav>
+
+            {/* Red Vertical Divider */}
+            <div className="hidden lg:block h-8 w-[1px] bg-[#DC2626]/70 shadow-[0_0_8px_rgba(220,38,38,0.5)] shrink-0" />
+
+            {/* NCC Crest Logo */}
+            <div className="hidden sm:flex items-center shrink-0">
+              <img 
+                src="/assets/logos/NCC Logo.png" 
+                alt="NCC RVCE" 
+                className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(220,38,38,0.25)]"
+              />
+            </div>
+
+            {/* [ REGISTER NOW ] Button */}
             {!isAdmin && (
               <button
                 onClick={() => {
@@ -135,39 +187,19 @@ export default function Header({ currentView, setView }: HeaderProps) {
                     handleNavClick('slot-booking');
                   }
                 }}
-                className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest transition-all shadow-sm font-semibold"
+                className="hidden sm:inline-flex items-center justify-center px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs font-bold uppercase tracking-wider rounded shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all hover:scale-105 active:scale-95 shrink-0"
               >
-                [ Register Now ]
+                [ REGISTER NOW ]
               </button>
             )}
 
-            {/* User State */}
+            {/* Sign In / User Auth Controls */}
             {currentUser ? (
-              <div className="flex items-center gap-2.5 pl-3 border-l border-[#282B3A]">
+              <div className="flex items-center gap-2 pl-2 border-l border-[#282B3A]">
                 <button
                   onClick={() => handleNavClick('profile')}
-                  className="text-right hidden sm:block hover:opacity-90 transition-opacity"
-                >
-                  <div className="text-xs font-medium text-[#F8FAFC] truncate max-w-[130px]">
-                    {registration?.name || currentUser.displayName || currentUser.email}
-                  </div>
-                  <div className="flex items-center justify-end gap-1 text-[10px] font-mono">
-                    {registration ? (
-                      <span className="text-[#10B981] flex items-center gap-0.5">
-                        <CheckCircle2 className="w-2.5 h-2.5" /> ELIGIBLE
-                      </span>
-                    ) : (
-                      <span className="text-[#EF4444] flex items-center gap-0.5">
-                        <AlertCircle className="w-2.5 h-2.5" /> UNROSTERED
-                      </span>
-                    )}
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => handleNavClick('profile')}
-                  className="w-8 h-8 rounded-full bg-[#1A1C26] border border-[#282B3A] flex items-center justify-center text-[#F8FAFC] text-xs font-bold font-mono hover:border-[#DC2626] transition-colors"
-                  title="View Profile"
+                  className="w-8 h-8 rounded-full bg-[#1A1C26] border border-[#DC2626]/80 flex items-center justify-center text-[#F8FAFC] text-xs font-bold font-mono hover:border-[#DC2626] shadow-sm transition-colors shrink-0"
+                  title={`Logged in as ${registration?.name || currentUser.displayName || currentUser.email}`}
                 >
                   {(registration?.name || currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
                 </button>
@@ -175,7 +207,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
                 <button
                   onClick={logout}
                   title="Sign Out"
-                  className="p-1.5 text-[#64748B] hover:text-[#EF4444] hover:bg-[#12131A] rounded transition-colors"
+                  className="p-1.5 text-[#64748B] hover:text-[#EF4444] hover:bg-[#12131A] rounded transition-colors shrink-0"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -183,77 +215,153 @@ export default function Header({ currentView, setView }: HeaderProps) {
             ) : (
               <button
                 onClick={loginWithGoogle}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#12131A] hover:bg-[#1A1C26] border border-[#282B3A] text-[#F8FAFC] text-xs font-mono uppercase tracking-wider rounded transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[#DC2626] hover:text-[#F8FAFC] hover:bg-[#DC2626]/15 font-mono text-xs uppercase tracking-wider transition-colors rounded shrink-0 font-bold"
               >
-                <LogIn className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>Sign In</span>
+                <LogIn className="w-4 h-4 text-[#DC2626]" />
+                <span className="hidden sm:inline">SIGN IN</span>
               </button>
             )}
 
-            {/* Mobile menu hamburger */}
+            {/* Mobile Hamburger Button */}
             <div className="lg:hidden flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1.5 text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#12131A] rounded"
+                className="p-2 text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#1A1C26] rounded transition-colors"
+                aria-label="Toggle navigation menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6 text-[#F8FAFC]" />}
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#12131A] border-b border-[#282B3A] px-4 pt-3 pb-5 space-y-2">
+        <div className="lg:hidden bg-[#0E0F15] border-b border-[#282B3A] px-4 pt-3 pb-6 space-y-3 shadow-2xl animate-fade-in">
+          {/* User Status Bar if logged in */}
           {currentUser && (
-            <div className="py-2 border-b border-[#282B3A] mb-2 flex items-center justify-between">
+            <div className="py-2.5 px-3 bg-[#14151D] border border-[#282B3A] rounded flex items-center justify-between">
               <div>
-                <div className="text-xs font-semibold text-[#F8FAFC]">
+                <div className="text-xs font-bold text-[#F8FAFC]">
                   {registration?.name || currentUser.displayName || currentUser.email}
                 </div>
                 <div className="text-[10px] font-mono text-[#64748B]">{currentUser.email}</div>
               </div>
               <button
                 onClick={logout}
-                className="text-xs text-[#EF4444] flex items-center gap-1 px-2 py-1 bg-red-950/40 rounded border border-red-900/40"
+                className="text-xs font-mono text-[#EF4444] hover:underline flex items-center gap-1"
               >
-                <LogOut className="w-3 h-3" /> Logout
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
               </button>
             </div>
           )}
 
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            return (
+          {/* Navigation Links */}
+          <div className="grid grid-cols-1 gap-1.5 pt-1">
+            <button
+              onClick={() => handleNavClick('overview')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                isHomeActive
+                  ? 'border border-[#DC2626] bg-[#1A1C26] text-[#F8FAFC] font-bold'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A1C26]'
+              }`}
+            >
+              <Home className="w-4 h-4 text-[#DC2626]" />
+              <span>Home</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('slot-booking')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                isSlotActive
+                  ? 'border border-[#DC2626] bg-[#1A1C26] text-[#F8FAFC] font-bold'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A1C26]'
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-[#DC2626]" />
+              <span>Slot Allocation</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('digital-pass')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                isPassActive
+                  ? 'border border-[#DC2626] bg-[#1A1C26] text-[#F8FAFC] font-bold'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A1C26]'
+              }`}
+            >
+              <Ticket className="w-4 h-4 text-[#DC2626]" />
+              <span>Participant Pass</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('live-leaderboard')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                isLeaderboardActive
+                  ? 'border border-[#DC2626] bg-[#1A1C26] text-[#F8FAFC] font-bold'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A1C26]'
+              }`}
+            >
+              <Trophy className="w-4 h-4 text-[#DC2626]" />
+              <span>Leaderboard</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('profile')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                isProfileActive
+                  ? 'border border-[#DC2626] bg-[#1A1C26] text-[#F8FAFC] font-bold'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A1C26]'
+              }`}
+            >
+              <User className="w-4 h-4 text-[#DC2626]" />
+              <span>Profile</span>
+            </button>
+
+            {isAdmin && (
               <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded ${
-                  isActive
-                    ? 'bg-[#1A1C26] text-[#F8FAFC] border border-[#282B3A]'
-                    : 'text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#1A1C26]/50'
+                onClick={() => handleNavClick('admin')}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wider rounded text-left ${
+                  isAdminActive
+                    ? 'border border-[#F59E0B] bg-[#F59E0B]/20 text-[#F59E0B] font-bold'
+                    : 'text-[#F59E0B] hover:bg-[#F59E0B]/10'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#DC2626]' : 'text-[#64748B]'}`} />
-                <span>{item.label}</span>
+                <Shield className="w-4 h-4 text-[#F59E0B]" />
+                <span>Admin Command Suite</span>
               </button>
-            );
-          })}
+            )}
+          </div>
 
+          {/* Quick Action Button */}
           <div className="pt-2 border-t border-[#282B3A] flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                if (!currentUser) loginWithGoogle();
-                else if (!registration) setOnboardingOpen(true);
-                else setView('slot-booking');
-              }}
-              className="w-full py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest text-center font-semibold"
-            >
-              [ Register Now ]
-            </button>
+            {!isAdmin && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (!currentUser) loginWithGoogle();
+                  else if (!registration) setOnboardingOpen(true);
+                  else setView('slot-booking');
+                }}
+                className="w-full py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest text-center font-bold rounded shadow-md"
+              >
+                [ REGISTER NOW ]
+              </button>
+            )}
+
+            {!currentUser && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  loginWithGoogle();
+                }}
+                className="w-full py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider text-center rounded flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4 text-[#DC2626]" />
+                <span>Sign In with Google</span>
+              </button>
+            )}
           </div>
         </div>
       )}
