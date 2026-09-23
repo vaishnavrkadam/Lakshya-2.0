@@ -1,10 +1,20 @@
-import { CertificateConfig, DEFAULT_CERTIFICATE_CONFIG, getSavedCertificateConfig } from '../config/certificateConfig';
+import {
+  CertificateConfig,
+  DEFAULT_CERTIFICATE_CONFIG,
+  getSavedCertificateConfig,
+  normalizeCertificateConfig
+} from '../config/certificateConfig';
 
 const TEMPLATE_URL = '/assets/certificates/certificate_template_2x.webp';
 const FALLBACK_TEMPLATE_URL = '/assets/certificates/certificate_template.webp';
+const PNG_FALLBACK_URL = '/assets/certificates/certificate_template.png';
 
 // In-memory cache for the loaded HTMLImageElement
 let cachedTemplateImage: HTMLImageElement | null = null;
+
+export function invalidateTemplateCache(): void {
+  cachedTemplateImage = null;
+}
 
 /**
  * Sanitizes participant name for clean, safe PDF filename
@@ -45,7 +55,17 @@ export async function loadTemplateImage(): Promise<HTMLImageElement> {
         cachedTemplateImage = fallbackImg;
         resolve(fallbackImg);
       };
-      fallbackImg.onerror = (e) => reject(new Error('Failed to load certificate template image: ' + e));
+      fallbackImg.onerror = () => {
+        // Fallback to png if webp fails
+        const pngImg = new Image();
+        pngImg.crossOrigin = 'anonymous';
+        pngImg.onload = () => {
+          cachedTemplateImage = pngImg;
+          resolve(pngImg);
+        };
+        pngImg.onerror = (e) => reject(new Error('Failed to load certificate template image: ' + e));
+        pngImg.src = PNG_FALLBACK_URL;
+      };
       fallbackImg.src = FALLBACK_TEMPLATE_URL;
     };
 
@@ -60,7 +80,6 @@ export async function ensureFontLoaded(fontFamily: string): Promise<void> {
   if (typeof document !== 'undefined' && 'fonts' in document) {
     try {
       await document.fonts.ready;
-      // Also specifically check the family
       const cleanFontName = fontFamily.replace(/['",]/g, ' ').trim().split(' ')[0];
       if (cleanFontName) {
         await document.fonts.load(`48px "${cleanFontName}"`);
@@ -72,19 +91,26 @@ export async function ensureFontLoaded(fontFamily: string): Promise<void> {
 }
 
 /**
- * Renders the certificate with dynamic participant name onto the provided HTMLCanvasElement
+ * Renders the certificate with dynamic participant name and USN onto the provided HTMLCanvasElement
  */
 export async function renderCertificateToCanvas(
   participantName: string,
   config: CertificateConfig = getSavedCertificateConfig(),
-  targetCanvas: HTMLCanvasElement
+  targetCanvas: HTMLCanvasElement,
+  participantUsn?: string
 ): Promise<void> {
+  const normConfig = normalizeCertificateConfig(config);
   const img = await loadTemplateImage();
-  await ensureFontLoaded(config.fontFamily);
 
-  // Set internal resolution to match high-resolution template
-  const width = img.naturalWidth || 2048;
-  const height = img.naturalHeight || 1446;
+  // Ensure both fonts are loaded
+  await Promise.all([
+    ensureFontLoaded(normConfig.name.fontFamily),
+    ensureFontLoaded(normConfig.usn.fontFamily),
+  ]);
+
+  // Set internal resolution to match high-resolution template (2000x1414)
+  const width = img.naturalWidth || 2000;
+  const height = img.naturalHeight || 1414;
 
   targetCanvas.width = width;
   targetCanvas.height = height;
@@ -95,42 +121,35 @@ export async function renderCertificateToCanvas(
   // 1. Draw base certificate artwork (preserves exact logos, borders, text, background)
   ctx.drawImage(img, 0, 0, width, height);
 
-  // 2. Prepare dynamic participant name
+  const scale = width / 1024;
+
+  // 2. Prepare and render dynamic participant name
   let name = (participantName || 'Participant Name').trim();
-  if (config.uppercase) {
+  if (normConfig.name.uppercase) {
     name = name.toUpperCase();
   }
 
-  // Scale font metrics from 1024-base coordinate space to actual canvas width
-  const scale = width / 1024;
-  let targetFontSize = config.fontSize * scale;
-  const maxAllowedWidth = width * (config.maxWidthPercent / 100);
+  let targetFontSize = normConfig.name.fontSize * scale;
+  const maxAllowedWidth = width * (normConfig.name.maxWidthPercent / 100);
 
-  // Setup initial font style
   ctx.save();
-  ctx.textAlign = config.textAlign;
+  ctx.textAlign = normConfig.name.textAlign;
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = config.fontColor;
+  ctx.fillStyle = normConfig.name.fontColor;
+  ctx.font = `${normConfig.name.fontWeight} ${targetFontSize}px ${normConfig.name.fontFamily}`;
 
-  ctx.font = `${config.fontWeight} ${targetFontSize}px ${config.fontFamily}`;
-
-  // 3. Dynamic Auto-scaling for long names
+  // Dynamic Auto-scaling for long names
   let textWidth = ctx.measureText(name).width;
-
   if (textWidth > maxAllowedWidth) {
-    // Proportional downscale
     const downscaleRatio = maxAllowedWidth / textWidth;
-    targetFontSize = Math.max(targetFontSize * downscaleRatio, 28 * scale);
-    ctx.font = `${config.fontWeight} ${targetFontSize}px ${config.fontFamily}`;
+    targetFontSize = Math.max(targetFontSize * downscaleRatio, 24 * scale);
+    ctx.font = `${normConfig.name.fontWeight} ${targetFontSize}px ${normConfig.name.fontFamily}`;
     textWidth = ctx.measureText(name).width;
   }
 
-  // 4. Calculate exact position
-  const xPos = (config.xPercent / 100) * width;
-  const yPos = (config.yPercent / 100) * height;
+  const nameX = (normConfig.name.xPercent / 100) * width;
+  const nameY = (normConfig.name.yPercent / 100) * height;
 
-  // 5. Render name
-  // If name still exceeds max allowed width after maximum reasonable downscaling, split into 2 lines
   if (textWidth > maxAllowedWidth && name.includes(' ')) {
     const words = name.split(' ');
     const mid = Math.ceil(words.length / 2);
@@ -138,13 +157,43 @@ export async function renderCertificateToCanvas(
     const line2 = words.slice(mid).join(' ');
 
     const lineGap = targetFontSize * 0.9;
-    ctx.fillText(line1, xPos, yPos - lineGap * 0.45);
-    ctx.fillText(line2, xPos, yPos + lineGap * 0.55);
+    ctx.fillText(line1, nameX, nameY - lineGap * 0.45);
+    ctx.fillText(line2, nameX, nameY + lineGap * 0.55);
   } else {
-    ctx.fillText(name, xPos, yPos);
+    ctx.fillText(name, nameX, nameY);
+  }
+  ctx.restore();
+
+  // 3. Prepare and render participant USN (if available)
+  let cleanUsn = (participantUsn || '').trim();
+  if (normConfig.usn.uppercase) {
+    cleanUsn = cleanUsn.toUpperCase();
   }
 
-  ctx.restore();
+  if (cleanUsn) {
+    ctx.save();
+    let usnFontSize = normConfig.usn.fontSize * scale;
+    const maxUsnWidth = width * (normConfig.usn.maxWidthPercent / 100);
+
+    ctx.textAlign = normConfig.usn.textAlign;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = normConfig.usn.fontColor;
+    ctx.font = `${normConfig.usn.fontWeight} ${usnFontSize}px ${normConfig.usn.fontFamily}`;
+
+    // Auto-scale USN if needed
+    let usnWidth = ctx.measureText(cleanUsn).width;
+    if (usnWidth > maxUsnWidth) {
+      const downscaleRatio = maxUsnWidth / usnWidth;
+      usnFontSize = Math.max(usnFontSize * downscaleRatio, 10 * scale);
+      ctx.font = `${normConfig.usn.fontWeight} ${usnFontSize}px ${normConfig.usn.fontFamily}`;
+    }
+
+    const usnX = (normConfig.usn.xPercent / 100) * width;
+    const usnY = (normConfig.usn.yPercent / 100) * height;
+
+    ctx.fillText(cleanUsn, usnX, usnY);
+    ctx.restore();
+  }
 }
 
 /**
@@ -152,12 +201,13 @@ export async function renderCertificateToCanvas(
  */
 export async function generateCertificatePdf(
   participantName: string,
-  config: CertificateConfig = getSavedCertificateConfig()
+  config: CertificateConfig = getSavedCertificateConfig(),
+  participantUsn?: string
 ): Promise<any> {
   const { default: jsPDF } = await import('jspdf');
   // Create offscreen canvas
   const canvas = document.createElement('canvas');
-  await renderCertificateToCanvas(participantName, config, canvas);
+  await renderCertificateToCanvas(participantName, config, canvas, participantUsn);
 
   // Generate A4 Landscape PDF (297 mm x 210 mm)
   const doc = new jsPDF({
@@ -178,9 +228,10 @@ export async function generateCertificatePdf(
  */
 export async function downloadCertificatePdf(
   participantName: string,
-  config: CertificateConfig = getSavedCertificateConfig()
+  config: CertificateConfig = getSavedCertificateConfig(),
+  participantUsn?: string
 ): Promise<void> {
-  const doc = await generateCertificatePdf(participantName, config);
+  const doc = await generateCertificatePdf(participantName, config, participantUsn);
   const filename = sanitizeCertificateFilename(participantName);
   doc.save(filename);
 }
@@ -189,7 +240,7 @@ export async function downloadCertificatePdf(
  * Generates a consolidated multi-page A4 Landscape PDF for all selected participants
  */
 export async function generateBulkCertificatesPdf(
-  participants: { name: string; email?: string }[],
+  participants: { name: string; email?: string; usn?: string | null }[],
   config: CertificateConfig = getSavedCertificateConfig(),
   onProgress?: (current: number, total: number, currentName: string) => void
 ): Promise<void> {
@@ -208,13 +259,14 @@ export async function generateBulkCertificatesPdf(
   for (let i = 0; i < participants.length; i++) {
     const p = participants[i];
     const name = p.name || 'Participant';
+    const usn = p.usn || undefined;
 
     if (onProgress) {
       onProgress(i + 1, participants.length, name);
     }
 
     // Re-render canvas for participant
-    await renderCertificateToCanvas(name, config, canvas);
+    await renderCertificateToCanvas(name, config, canvas, usn);
     const imgData = canvas.toDataURL('image/png', 0.95);
 
     if (i > 0) {

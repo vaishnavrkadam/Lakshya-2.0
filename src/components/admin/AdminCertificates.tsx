@@ -4,10 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { getColRef, getDocRef, onSnapshot, updateDoc, serverTimestamp } from '../../lib/firebase';
 import {
   CertificateConfig,
+  TextElementConfig,
   AVAILABLE_FONTS,
+  AVAILABLE_USN_FONTS,
   DEFAULT_CERTIFICATE_CONFIG,
   getSavedCertificateConfig,
   saveCertificateConfig,
+  saveCertificateConfigToRemote,
+  subscribeCertificateConfig,
   resetCertificateConfig
 } from '../../config/certificateConfig';
 import {
@@ -67,6 +71,9 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
   // Configuration state
   const [config, setConfig] = useState<CertificateConfig>(getSavedCertificateConfig);
   const [showConfigPanel, setShowConfigPanel] = useState<boolean>(false);
+  const [configTab, setConfigTab] = useState<'name' | 'usn'>('name');
+  const [isSavingRemote, setIsSavingRemote] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<boolean>(false);
 
   // Participant selection & filter state
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -86,8 +93,17 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
-  // Override preview name for edge-case testing
+  // Override preview name and USN for edge-case testing
   const [testNameOverride, setTestNameOverride] = useState<string | null>(null);
+  const [testUsnOverride, setTestUsnOverride] = useState<string | null>(null);
+
+  // Listen to remote certificate configuration changes
+  useEffect(() => {
+    const unsub = subscribeCertificateConfig((remoteConfig) => {
+      setConfig(remoteConfig);
+    });
+    return () => unsub();
+  }, []);
 
   // Map of attended emails
   const attendedEmails = useMemo(() => {
@@ -163,33 +179,65 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
     }
   }, [filteredParticipants, selectedParticipant]);
 
-  // Active name for rendering on preview canvas
+  // Active name and USN for rendering on preview canvas
   const activeDisplayName = testNameOverride ?? (selectedParticipant?.name || 'Participant Name');
+  const activeDisplayUsn = testUsnOverride ?? (selectedParticipant?.usn || '1RV25CS196');
 
-  // Render to canvas whenever participant or config changes
+  // Render to canvas whenever participant, USN, or config changes
   useEffect(() => {
     let active = true;
     if (canvasRef.current) {
       setPreviewError(null);
-      renderCertificateToCanvas(activeDisplayName, config, canvasRef.current).catch((err) => {
+      renderCertificateToCanvas(activeDisplayName, config, canvasRef.current, activeDisplayUsn).catch((err) => {
         if (active) setPreviewError(err.message || 'Failed to render certificate preview');
       });
     }
     return () => {
       active = false;
     };
-  }, [activeDisplayName, config]);
+  }, [activeDisplayName, activeDisplayUsn, config]);
 
   // Handlers for config changes
-  const handleConfigChange = (partial: Partial<CertificateConfig>) => {
-    const updated = { ...config, ...partial };
+  const handleNameConfigChange = (partial: Partial<TextElementConfig>) => {
+    const updated: CertificateConfig = {
+      ...config,
+      name: { ...config.name, ...partial },
+      ...partial, // mirror to root
+    };
     setConfig(updated);
     saveCertificateConfig(updated);
   };
 
+  const handleUsnConfigChange = (partial: Partial<TextElementConfig>) => {
+    const updated: CertificateConfig = {
+      ...config,
+      usn: { ...config.usn, ...partial },
+    };
+    setConfig(updated);
+    saveCertificateConfig(updated);
+  };
+
+  const handleSaveConfigRemote = async () => {
+    try {
+      setIsSavingRemote(true);
+      await saveCertificateConfigToRemote(config);
+      setSaveSuccessMsg(true);
+      setTimeout(() => setSaveSuccessMsg(false), 3000);
+    } catch (err: any) {
+      alert('Failed to save certificate configuration to remote server: ' + (err.message || err));
+    } finally {
+      setIsSavingRemote(false);
+    }
+  };
+
   const handleResetConfig = () => {
-    const def = resetCertificateConfig();
-    setConfig(def);
+    if (confirm('Reset typography and coordinates to detected template defaults?')) {
+      const def = resetCertificateConfig();
+      setConfig(def);
+      saveCertificateConfigToRemote(def).catch(console.warn);
+      setSaveSuccessMsg(true);
+      setTimeout(() => setSaveSuccessMsg(false), 3000);
+    }
   };
 
   // Bulk selection toggles
@@ -314,7 +362,7 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
 
     try {
       setIsGeneratingSingle(true);
-      await downloadCertificatePdf(activeDisplayName, config);
+      await downloadCertificatePdf(activeDisplayName, config, activeDisplayUsn);
     } catch (err: any) {
       alert('Error generating certificate PDF: ' + err.message);
     } finally {
@@ -336,7 +384,7 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
       setBulkProgress({ current: 0, total: targetParticipants.length, name: 'Initializing...' });
 
       await generateBulkCertificatesPdf(
-        targetParticipants.map((p) => ({ name: p.name, email: p.email })),
+        targetParticipants.map((p) => ({ name: p.name, email: p.email, usn: p.usn || undefined })),
         config,
         (current, total, name) => {
           setBulkProgress({ current, total, name });
@@ -575,9 +623,19 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
                       </div>
 
                       {isApproved ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/40 border border-emerald-800 text-emerald-400 font-mono text-xs rounded font-bold">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Approved (Operations Disabled)</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/40 border border-emerald-800 text-emerald-400 font-mono text-xs rounded font-bold">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Approved</span>
+                          </div>
+                          <button
+                            onClick={() => downloadCertificatePdf(req.participantName, config, req.usn)}
+                            title="Download verified participant certificate"
+                            className="px-3 py-1.5 bg-[#12131A] hover:bg-[#1A1C26] border border-[#282B3A] hover:border-emerald-600 text-[#F8FAFC] font-mono text-xs rounded flex items-center gap-1.5 transition-colors shadow-sm"
+                          >
+                            <Download className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Download PDF</span>
+                          </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -689,156 +747,382 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
 
       {/* Typography Configuration Panel (Collapsible) */}
       {showConfigPanel && (
-        <div className="p-5 bg-[#12131A] border border-[#282B3A] rounded space-y-4 animate-fade-in shadow-md">
-          <div className="flex items-center justify-between border-b border-[#282B3A] pb-3">
+        <div className="p-5 bg-[#12131A] border border-[#282B3A] rounded space-y-5 animate-fade-in shadow-md">
+          {/* Header & Main Save Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#282B3A] pb-4">
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-[#DC2626]" />
-              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F8FAFC]">
-                Typography & Coordinate Calibration
-              </h3>
+              <div>
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F8FAFC]">
+                  Typography & Coordinate Calibration
+                </h3>
+                <span className="font-mono text-[10px] text-[#64748B]">
+                  Calibrate positions & colors for Name and USN. Saved settings apply to all certificate downloads.
+                </span>
+              </div>
             </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                onClick={handleResetConfig}
+                className="px-3 py-1.5 text-xs font-mono text-[#64748B] hover:text-[#DC2626] border border-[#282B3A] hover:border-[#DC2626]/40 rounded flex items-center gap-1.5 transition-colors"
+                title="Reset to Canva calibrated defaults"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Defaults</span>
+              </button>
+
+              <button
+                onClick={handleSaveConfigRemote}
+                disabled={isSavingRemote}
+                className={`px-4 py-1.5 font-mono text-xs uppercase tracking-wider font-bold rounded flex items-center gap-1.5 shadow transition-all ${
+                  saveSuccessMsg
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-[#DC2626] hover:bg-[#E51A1A] text-white disabled:opacity-50'
+                }`}
+              >
+                {isSavingRemote ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : saveSuccessMsg ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Saved & Synced!</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Save & Sync Config</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-Tab Selector: Name vs USN */}
+          <div className="flex items-center gap-2 border-b border-[#282B3A] pb-2">
             <button
-              onClick={handleResetConfig}
-              className="text-xs font-mono text-[#64748B] hover:text-[#DC2626] flex items-center gap-1 transition-colors"
+              onClick={() => setConfigTab('name')}
+              className={`px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider font-semibold rounded transition-all flex items-center gap-2 ${
+                configTab === 'name'
+                  ? 'bg-[#1A1C26] text-[#DC2626] border border-[#DC2626]/60 shadow-sm'
+                  : 'text-[#64748B] hover:text-[#F8FAFC]'
+              }`}
             >
-              <RotateCcw className="w-3 h-3" />
-              <span>Reset Defaults</span>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: config.name.fontColor }} />
+              <span>Participant Name Styling</span>
+            </button>
+
+            <button
+              onClick={() => setConfigTab('usn')}
+              className={`px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider font-semibold rounded transition-all flex items-center gap-2 ${
+                configTab === 'usn'
+                  ? 'bg-[#1A1C26] text-[#DC2626] border border-[#DC2626]/60 shadow-sm'
+                  : 'text-[#64748B] hover:text-[#F8FAFC]'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: config.usn.fontColor }} />
+              <span>USN (Seat Number) Styling</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
-            {/* Font Family */}
-            <div className="space-y-1.5">
-              <label className="text-[#64748B] uppercase block">Font Family</label>
-              <select
-                value={config.fontFamily}
-                onChange={(e) => handleConfigChange({ fontFamily: e.target.value })}
-                className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
-              >
-                {AVAILABLE_FONTS.map((f) => (
-                  <option key={f.id} value={f.family}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Base Font Size */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <label className="text-[#64748B] uppercase">Font Size</label>
-                <span className="text-[#DC2626] font-bold">{config.fontSize}px</span>
+          {/* TAB 1: PARTICIPANT NAME CONFIGURATION */}
+          {configTab === 'name' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+              {/* Font Family */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">Font Family</label>
+                <select
+                  value={config.name.fontFamily}
+                  onChange={(e) => handleNameConfigChange({ fontFamily: e.target.value })}
+                  className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                >
+                  {AVAILABLE_FONTS.map((f) => (
+                    <option key={f.id} value={f.family}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <input
-                type="range"
-                min="32"
-                max="76"
-                step="1"
-                value={config.fontSize}
-                onChange={(e) => handleConfigChange({ fontSize: Number(e.target.value) })}
-                className="w-full accent-[#DC2626] cursor-pointer"
-              />
-            </div>
 
-            {/* X Position (Center %) */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <label className="text-[#64748B] uppercase">X Center Alignment</label>
-                <span className="text-[#DC2626] font-bold">{config.xPercent}%</span>
-              </div>
-              <input
-                type="range"
-                min="30"
-                max="70"
-                step="0.5"
-                value={config.xPercent}
-                onChange={(e) => handleConfigChange({ xPercent: Number(e.target.value) })}
-                className="w-full accent-[#DC2626] cursor-pointer"
-              />
-            </div>
-
-            {/* Y Position (Baseline %) */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <label className="text-[#64748B] uppercase">Y Baseline Position</label>
-                <span className="text-[#DC2626] font-bold">{config.yPercent}%</span>
-              </div>
-              <input
-                type="range"
-                min="44"
-                max="58"
-                step="0.2"
-                value={config.yPercent}
-                onChange={(e) => handleConfigChange({ yPercent: Number(e.target.value) })}
-                className="w-full accent-[#DC2626] cursor-pointer"
-              />
-            </div>
-
-            {/* Font Color */}
-            <div className="space-y-1.5">
-              <label className="text-[#64748B] uppercase block">Font Color</label>
-              <div className="flex items-center gap-2">
+              {/* Base Font Size */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">Font Size</label>
+                  <span className="text-[#DC2626] font-bold">{config.name.fontSize}px</span>
+                </div>
                 <input
-                  type="color"
-                  value={config.fontColor}
-                  onChange={(e) => handleConfigChange({ fontColor: e.target.value })}
-                  className="w-8 h-8 rounded border border-[#282B3A] bg-transparent cursor-pointer p-0"
-                />
-                <input
-                  type="text"
-                  value={config.fontColor}
-                  onChange={(e) => handleConfigChange({ fontColor: e.target.value })}
-                  className="flex-1 p-1.5 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs font-mono uppercase"
+                  type="range"
+                  min="32"
+                  max="76"
+                  step="1"
+                  value={config.name.fontSize}
+                  onChange={(e) => handleNameConfigChange({ fontSize: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
                 />
               </div>
-            </div>
 
-            {/* Max Text Width % */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <label className="text-[#64748B] uppercase">Max Width Before Auto-Shrink</label>
-                <span className="text-[#DC2626] font-bold">{config.maxWidthPercent}%</span>
-              </div>
-              <input
-                type="range"
-                min="40"
-                max="85"
-                step="1"
-                value={config.maxWidthPercent}
-                onChange={(e) => handleConfigChange({ maxWidthPercent: Number(e.target.value) })}
-                className="w-full accent-[#DC2626] cursor-pointer"
-              />
-            </div>
-
-            {/* Font Weight */}
-            <div className="space-y-1.5">
-              <label className="text-[#64748B] uppercase block">Font Weight</label>
-              <select
-                value={config.fontWeight}
-                onChange={(e) => handleConfigChange({ fontWeight: e.target.value as any })}
-                className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
-              >
-                <option value="normal">Normal (Default)</option>
-                <option value="500">Medium (500)</option>
-                <option value="600">Semi-Bold (600)</option>
-                <option value="bold">Bold (700)</option>
-              </select>
-            </div>
-
-            {/* Text Transform / Uppercase */}
-            <div className="space-y-1.5">
-              <label className="text-[#64748B] uppercase block">Uppercase Transform</label>
-              <label className="flex items-center gap-2 p-2 bg-[#0B0C10] border border-[#282B3A] rounded cursor-pointer">
+              {/* X Position (Center %) */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">X Horizontal Position</label>
+                  <span className="text-[#DC2626] font-bold">{config.name.xPercent}%</span>
+                </div>
                 <input
-                  type="checkbox"
-                  checked={config.uppercase}
-                  onChange={(e) => handleConfigChange({ uppercase: e.target.checked })}
-                  className="accent-[#DC2626]"
+                  type="range"
+                  min="30"
+                  max="70"
+                  step="0.2"
+                  value={config.name.xPercent}
+                  onChange={(e) => handleNameConfigChange({ xPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
                 />
-                <span className="text-[#F8FAFC]">Force UPPERCASE</span>
-              </label>
+              </div>
+
+              {/* Y Position (Baseline %) */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">Y Baseline Position</label>
+                  <span className="text-[#DC2626] font-bold">{config.name.yPercent}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="40"
+                  max="56"
+                  step="0.2"
+                  value={config.name.yPercent}
+                  onChange={(e) => handleNameConfigChange({ yPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* Font Color */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">Font Color (Gold/Bronze Match: #A47038)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={config.name.fontColor}
+                    onChange={(e) => handleNameConfigChange({ fontColor: e.target.value })}
+                    className="w-8 h-8 rounded border border-[#282B3A] bg-transparent cursor-pointer p-0"
+                  />
+                  <input
+                    type="text"
+                    value={config.name.fontColor}
+                    onChange={(e) => handleNameConfigChange({ fontColor: e.target.value })}
+                    className="flex-1 p-1.5 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs font-mono uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* Max Text Width % */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">Max Width Before Auto-Shrink</label>
+                  <span className="text-[#DC2626] font-bold">{config.name.maxWidthPercent}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="40"
+                  max="85"
+                  step="1"
+                  value={config.name.maxWidthPercent}
+                  onChange={(e) => handleNameConfigChange({ maxWidthPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* Font Weight */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">Font Weight</label>
+                <select
+                  value={config.name.fontWeight}
+                  onChange={(e) => handleNameConfigChange({ fontWeight: e.target.value as any })}
+                  className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                >
+                  <option value="normal">Normal (Default)</option>
+                  <option value="500">Medium (500)</option>
+                  <option value="600">Semi-Bold (600)</option>
+                  <option value="bold">Bold (700)</option>
+                </select>
+              </div>
+
+              {/* Text Alignment */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">Alignment & Transform</label>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={config.name.textAlign}
+                    onChange={(e) => handleNameConfigChange({ textAlign: e.target.value as any })}
+                    className="flex-1 p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                  >
+                    <option value="center">Center</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                  </select>
+                  <label className="flex items-center gap-1.5 text-xs text-[#94A3B8] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.name.uppercase}
+                      onChange={(e) => handleNameConfigChange({ uppercase: e.target.checked })}
+                      className="accent-[#DC2626]"
+                    />
+                    <span>Caps</span>
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* TAB 2: USN CONFIGURATION */}
+          {configTab === 'usn' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+              {/* USN Font Family */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">USN Font Family</label>
+                <select
+                  value={config.usn.fontFamily}
+                  onChange={(e) => handleUsnConfigChange({ fontFamily: e.target.value })}
+                  className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                >
+                  {AVAILABLE_USN_FONTS.map((f) => (
+                    <option key={f.id} value={f.family}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* USN Base Font Size */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">USN Font Size</label>
+                  <span className="text-[#DC2626] font-bold">{config.usn.fontSize}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="28"
+                  step="0.5"
+                  value={config.usn.fontSize}
+                  onChange={(e) => handleUsnConfigChange({ fontSize: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* USN X Position (% across template) */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">X Position (Gap: 29.1%)</label>
+                  <span className="text-[#DC2626] font-bold">{config.usn.xPercent}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="40"
+                  step="0.1"
+                  value={config.usn.xPercent}
+                  onChange={(e) => handleUsnConfigChange({ xPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* USN Y Position (Baseline %) */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">Y Baseline (Aligned: 53.5%)</label>
+                  <span className="text-[#DC2626] font-bold">{config.usn.yPercent}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="48"
+                  max="58"
+                  step="0.1"
+                  value={config.usn.yPercent}
+                  onChange={(e) => handleUsnConfigChange({ yPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* USN Font Color */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">USN Color (Navy Blue Match: #0C3C68)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={config.usn.fontColor}
+                    onChange={(e) => handleUsnConfigChange({ fontColor: e.target.value })}
+                    className="w-8 h-8 rounded border border-[#282B3A] bg-transparent cursor-pointer p-0"
+                  />
+                  <input
+                    type="text"
+                    value={config.usn.fontColor}
+                    onChange={(e) => handleUsnConfigChange({ fontColor: e.target.value })}
+                    className="flex-1 p-1.5 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs font-mono uppercase"
+                  />
+                </div>
+              </div>
+
+              {/* USN Max Width */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <label className="text-[#64748B] uppercase">Max USN Width %</label>
+                  <span className="text-[#DC2626] font-bold">{config.usn.maxWidthPercent}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="30"
+                  step="0.5"
+                  value={config.usn.maxWidthPercent}
+                  onChange={(e) => handleUsnConfigChange({ maxWidthPercent: Number(e.target.value) })}
+                  className="w-full accent-[#DC2626] cursor-pointer"
+                />
+              </div>
+
+              {/* USN Font Weight */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">USN Weight</label>
+                <select
+                  value={config.usn.fontWeight}
+                  onChange={(e) => handleUsnConfigChange({ fontWeight: e.target.value as any })}
+                  className="w-full p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                >
+                  <option value="bold">Bold (700 - Default)</option>
+                  <option value="600">Semi-Bold (600)</option>
+                  <option value="500">Medium (500)</option>
+                  <option value="normal">Normal</option>
+                </select>
+              </div>
+
+              {/* USN Alignment & Transform */}
+              <div className="space-y-1.5">
+                <label className="text-[#64748B] uppercase block">Alignment & Transform</label>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={config.usn.textAlign}
+                    onChange={(e) => handleUsnConfigChange({ textAlign: e.target.value as any })}
+                    className="flex-1 p-2 bg-[#0B0C10] border border-[#282B3A] text-[#F8FAFC] rounded text-xs"
+                  >
+                    <option value="center">Center in Gap</option>
+                    <option value="left">Left Aligned</option>
+                    <option value="right">Right Aligned</option>
+                  </select>
+                  <label className="flex items-center gap-1.5 text-xs text-[#94A3B8] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.usn.uppercase}
+                      onChange={(e) => handleUsnConfigChange({ uppercase: e.target.checked })}
+                      className="accent-[#DC2626]"
+                    />
+                    <span>Force CAPS</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -984,11 +1268,16 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
               <span className="text-[10px] font-mono uppercase tracking-widest text-[#64748B] block">
                 WYSIWYG HIGH-DPI CANVAS PREVIEW
               </span>
-              <h3 className="font-headline-sm text-lg text-[#F8FAFC] uppercase font-serif">
-                {activeDisplayName}
-              </h3>
+              <div className="flex items-baseline gap-2.5">
+                <h3 className="font-headline-sm text-lg text-[#F8FAFC] uppercase font-serif">
+                  {activeDisplayName}
+                </h3>
+                <span className="font-mono text-xs font-bold text-cyan-400 bg-cyan-950/40 border border-cyan-800 px-2 py-0.5 rounded">
+                  USN: {activeDisplayUsn}
+                </span>
+              </div>
               {selectedParticipant && (
-                <span className="font-mono text-[11px] text-[#64748B]">
+                <span className="font-mono text-[11px] text-[#64748B] block mt-0.5">
                   {selectedParticipant.email} · {selectedParticipant.college || 'RVCE'}
                 </span>
               )}
@@ -1013,61 +1302,76 @@ export default function AdminCertificates({ registrations, bookings }: AdminCert
             </button>
           </div>
 
-          {/* Quick Edge-Case Name Preset Testing */}
+          {/* Quick Edge-Case Name & USN Preset Testing */}
           <div className="space-y-1.5">
             <span className="font-mono text-[10px] text-[#64748B] uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-[#DC2626]" /> Quick Layout Stress Tests:
             </span>
             <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
               <button
-                onClick={() => setTestNameOverride(null)}
+                onClick={() => {
+                  setTestNameOverride(null);
+                  setTestUsnOverride(null);
+                }}
                 className={`px-2.5 py-1 border rounded transition-colors ${
-                  testNameOverride === null
+                  testNameOverride === null && testUsnOverride === null
                     ? 'bg-[#DC2626] border-[#DC2626] text-[#F8FAFC] font-bold'
                     : 'bg-[#0B0C10] border-[#282B3A] text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
-                Shooter: {selectedParticipant?.name || 'Standard'}
+                Shooter: {selectedParticipant?.name || 'Standard'} ({selectedParticipant?.usn || '1RV25CS196'})
               </button>
               <button
-                onClick={() => setTestNameOverride('Om')}
+                onClick={() => {
+                  setTestNameOverride('Om');
+                  setTestUsnOverride('1RV25CS196');
+                }}
                 className={`px-2 py-1 border rounded transition-colors ${
                   testNameOverride === 'Om'
                     ? 'bg-[#DC2626] border-[#DC2626] text-[#F8FAFC] font-bold'
                     : 'bg-[#0B0C10] border-[#282B3A] text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
-                Short: &quot;Om&quot;
+                Short: &quot;Om&quot; · 1RV25CS196
               </button>
               <button
-                onClick={() => setTestNameOverride('Mohammed Ali Abdul Rahman')}
+                onClick={() => {
+                  setTestNameOverride('Mohammed Ali Abdul Rahman');
+                  setTestUsnOverride('1RV24EC089');
+                }}
                 className={`px-2 py-1 border rounded transition-colors ${
                   testNameOverride === 'Mohammed Ali Abdul Rahman'
                     ? 'bg-[#DC2626] border-[#DC2626] text-[#F8FAFC] font-bold'
                     : 'bg-[#0B0C10] border-[#282B3A] text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
-                Multi-word: &quot;Mohammed Ali Abdul Rahman&quot;
+                Multi-word: &quot;Mohammed Ali...&quot;
               </button>
               <button
-                onClick={() => setTestNameOverride('Dr. Chandrashekar Venkataraman Subramaniam')}
+                onClick={() => {
+                  setTestNameOverride('Dr. Chandrashekar Venkataraman Subramaniam');
+                  setTestUsnOverride('1RV23CS012');
+                }}
                 className={`px-2 py-1 border rounded transition-colors ${
                   testNameOverride === 'Dr. Chandrashekar Venkataraman Subramaniam'
                     ? 'bg-[#DC2626] border-[#DC2626] text-[#F8FAFC] font-bold'
                     : 'bg-[#0B0C10] border-[#282B3A] text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
-                Long (Auto-Scale): &quot;Dr. Chandrashekar Venkataraman Subramaniam&quot;
+                Long (Auto-Scale): &quot;Dr. Chandrashekar...&quot;
               </button>
               <button
-                onClick={() => setTestNameOverride("René D'Souza-O'Connor & Co.")}
+                onClick={() => {
+                  setTestNameOverride("René D'Souza-O'Connor & Co.");
+                  setTestUsnOverride('1RV25CS196-EXT');
+                }}
                 className={`px-2 py-1 border rounded transition-colors ${
                   testNameOverride === "René D'Souza-O'Connor & Co."
                     ? 'bg-[#DC2626] border-[#DC2626] text-[#F8FAFC] font-bold'
                     : 'bg-[#0B0C10] border-[#282B3A] text-[#94A3B8] hover:text-[#F8FAFC]'
                 }`}
               >
-                Special Chars: &quot;René D&apos;Souza-O&apos;Connor&quot;
+                Special Chars & Long USN
               </button>
             </div>
           </div>

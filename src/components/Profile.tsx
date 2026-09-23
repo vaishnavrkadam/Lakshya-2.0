@@ -95,16 +95,18 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
   useEffect(() => {
     if (showCertPreview && certCanvasRef.current) {
       const name = registration?.name || currentUser?.displayName || 'Competitor';
-      renderCertificateToCanvas(name, getSavedCertificateConfig(), certCanvasRef.current).catch(console.error);
+      const usn = registration?.usn || certRequest?.usn || '';
+      renderCertificateToCanvas(name, getSavedCertificateConfig(), certCanvasRef.current, usn).catch(console.error);
     }
-  }, [showCertPreview, registration, currentUser]);
+  }, [showCertPreview, registration, currentUser, certRequest]);
 
   const handleDownloadCert = async () => {
     if (isDownloadingCert) return;
     const participantName = registration?.name || currentUser?.displayName || 'Competitor';
+    const usn = registration?.usn || certRequest?.usn || '';
     try {
       setIsDownloadingCert(true);
-      await downloadCertificatePdf(participantName);
+      await downloadCertificatePdf(participantName, undefined, usn);
     } catch (err: any) {
       alert('Failed to generate certificate PDF: ' + (err.message || err));
     } finally {

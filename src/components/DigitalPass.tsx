@@ -60,9 +60,10 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
   const handleDownload = async () => {
     if (isDownloadingCert) return;
     const name = registration?.name || currentUser?.displayName || 'Competitor';
+    const usn = registration?.usn || certRequest?.usn || '';
     try {
       setIsDownloadingCert(true);
-      await downloadCertificatePdf(name);
+      await downloadCertificatePdf(name, undefined, usn);
     } catch (e: any) {
       alert('Failed to download certificate: ' + (e.message || e));
     } finally {

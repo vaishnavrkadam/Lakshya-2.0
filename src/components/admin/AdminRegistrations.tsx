@@ -692,7 +692,7 @@ export default function AdminRegistrations({ registrations, bookings }: AdminReg
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => downloadCertificatePdf(reg.name)}
+                            onClick={() => downloadCertificatePdf(reg.name, undefined, reg.usn || undefined)}
                             title={`Download Certificate for ${reg.name}`}
                             className="p-1.5 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#DC2626] rounded transition-colors inline-flex items-center gap-1 text-[11px] font-mono"
                           >
