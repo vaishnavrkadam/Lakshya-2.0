@@ -1,0 +1,109 @@
+1. AP-X
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\APX.jpeg"
+
+Description:
+AP-X is a Latch action Pre-Charged Pneumatic Air Pistol for amateur and professional shooters. It has a short barrel and comes with open sights.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 237 mm
+
+Weight: 1 kg
+
+Velocity: 500 fps (Adjustable)
+
+2. GM10 Club
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\GM10 Club.jpeg"
+
+Description:
+The GM-10 Club is an entry level Pre-Charged Pneumatic Air Rifle designed for club use. It has peep sights which may be easily changed with open sights, if required. The stock is ambidextrous.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 480 mm
+
+Weight: 2.3 kg
+
+Velocity: 500 fps (10.34 gr pellet)
+
+3. Viper
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\Viper.jpeg"
+
+Description:
+Viper is a latch action PCP Air Rifle built on the sturdy GM-10 platform. It features 480 mm barrel with 12 grooves. The highlight of this model is the all weather synthetic stock which is light, sturdy and ambidextrous. Viper is available in both suppressed as well as open sight options.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 480 mm
+
+Weight: 2.3 kg
+
+Velocity: 850 fps (10.34 gr pellet)
+
+4. G10 Karbin
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\G10 Karbin.jpeg"
+
+Description:
+Karbin is an ultra-compact, precision Pre-Charged Pneumatic airgun from Gandiva Advanced Research and Equipments Pvt Ltd. It is built on the sturdy and reliable GM-10 platform with an extended trigger assembly and compact stock to enable accurate shooting from enclosed areas where a full length rifle is hard to manoeuvre. The rifle comes with a factory fitted Picatinny rail mount for mounting telescopic sights. The factory fit suppressor ensures a reduced sound report. Karbin comes in a variety of colour options and the stock design is ambidextrous.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 480 mm
+
+Weight: 2.6 kg
+
+Velocity: 850 fps (10.34 pellet)
+
+5. Theseus
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\Theseus.jpeg"
+
+Description:
+Theseus is a handy, compact, fully regulated and suppressed PCP air weapon from GARE featuring 550mm barrel for accuracy, 650 cc air reservoir - capable of 180 shots in one refill. Ideal for fun plinking. The gun comes with picattiny scope rail to mount scope and adjustable two stage trigger.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 550 mm
+
+Weight: 4.1 kg
+
+Velocity: 850 fps (10.34 gr pellet)
+
+6.BHIM
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\BHIM.jpeg"
+Description:
+BHIM is a latch action Pre-Charged Pneumatic Air Rifle with a large reservoir and provides the largest number of shots per fill among any Indian made PCP. The Airgun is also factory fit with a suppressor which provides reduced sound report.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 480 mm
+
+Weight: 4.2 kg
+
+Velocity: 850 fps (10.34 gr pellet)
+
+7. Falcon Thumbhole Stock
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\Falcon Thumbhole Stock.jpeg"
+Description:
+Falcon is a long range bench rest rifle from GARE. It has a 550 mm rifled barrel—the longest among any Indian made air weapon. The thumbhole stock and lever type safety add to its uniqueness. The Falcon is every air gun lover's dream of a long range precision air weapon.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 550 mm
+
+Weight: 4.2 kg
+
+Velocity: 850 fps (10.34 gr pellet)
+
+8. Falcon Beech Wood Stock
+Image : "C:\Users\Admin\Desktop\Lakshya-Website\lakshya_2_0_coding_agent_package\public\assets\weapons\New\Falcon Beech Wood Stock.jpeg"
+
+Description:
+Falcon is a long range bench rest rifle from GARE. It has a 550 mm rifled barrel—the longest among any Indian made air weapon. The beech wood stock and lever type safety add to its uniqueness. The Falcon is every air gun lover's dream of a long range precision air weapon.
+
+Calibre: 0.177" / 4.5 mm
+
+Barrel Length: 550 mm
+
+Weight: 4.2  kg
+
+Velocity: 850 fps (10.34 gr pellet)

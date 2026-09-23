@@ -50,7 +50,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
               title="RV College of Engineering"
             >
               <img 
-                src="/assets/logos/RVCE Logo.png" 
+                src="/assets/logos/RVCE Logo.webp" 
                 alt="RV College of Engineering" 
                 className="h-10 sm:h-12 w-auto object-contain brightness-110"
               />
@@ -104,7 +104,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
               title="Gandiva Aero-pneumatic Research and Equipments"
             >
               <img 
-                src="/assets/logos/GARE Logo.png" 
+                src="/assets/logos/GARE Logo.webp" 
                 alt="GARE - Precision & Accuracy" 
                 className="h-9 sm:h-11 md:h-12 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]"
               />
@@ -157,7 +157,7 @@ export default function Header({ currentView, setView }: HeaderProps) {
             {/* NCC Crest Logo */}
             <div className="hidden sm:flex items-center shrink-0">
               <img 
-                src="/assets/logos/NCC Logo.png" 
+                src="/assets/logos/NCC Logo.webp" 
                 alt="NCC RVCE" 
                 className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(220,38,38,0.25)]"
               />

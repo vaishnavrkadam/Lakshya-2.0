@@ -27,112 +27,113 @@ interface WeaponSpec {
   velocity?: string;
   description: string;
   imageSrc: string;
+  thumbSrc?: string;
 }
 
 const WEAPONS_DATA: WeaponSpec[] = [
   {
-    id: 'falcon',
-    name: 'FALCON',
+    id: 'ap-x',
+    name: 'AP-X',
     manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '450 mm',
-    weight: '4.2 kg',
-    velocity: '170 m/s',
-    description: 'Flagship 10m match air rifle engineered by GARE with precision regulator consistency for ISSF target events.',
-    imageSrc: '/assets/weapons/falcon.png',
-  },
-  {
-    id: 'falcon-walnut',
-    name: 'FALCON WALNUT STOCK',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '450 mm',
-    weight: '4.3 kg',
-    velocity: '170 m/s',
-    description: 'Special edition 10m competition rifle equipped with a solid walnut stock for enhanced ergonomics and weight distribution.',
-    imageSrc: '/assets/weapons/falcon-walnut.png',
-  },
-  {
-    id: 'falcon-beechwood',
-    name: 'FALCON BEECH WOOD STOCK',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '450 mm',
-    weight: '4.3 kg',
-    velocity: '170 m/s',
-    description: 'ISSF-compliant 10m competition air rifle featuring a durable beech wood stock for steady stance control.',
-    imageSrc: '/assets/weapons/falcon-beechwood.png',
-  },
-  {
-    id: 'bhim',
-    name: 'BHIM',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    weight: '4.5 kg',
-    velocity: '175 m/s',
-    description: 'High-rigidity 10m match air rifle designed for collegiate and national target competition.',
-    imageSrc: '/assets/weapons/bhim.png',
-  },
-  {
-    id: 'theseus',
-    name: 'THESEUS',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    weight: '4.0 kg',
-    description: 'Lightweight 10m competition rifle featuring refined balance and smooth pneumatic trigger break.',
-    imageSrc: '/assets/weapons/theseus.png',
-  },
-  {
-    id: 'gm10-karbin',
-    name: 'GM10 KARBIN',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '450 mm',
-    weight: '3.8 kg',
-    velocity: '170 m/s',
-    description: 'Compact carbine-format 10m competition air rifle providing rapid aim recovery and steady handling.',
-    imageSrc: '/assets/weapons/gm10-karbin.png',
-  },
-  {
-    id: 'viper',
-    name: 'VIPER',
-    manufacturer: 'GARE',
-    category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    weight: '3.9 kg',
-    velocity: '175 m/s',
-    description: 'Performance 10m match air rifle featuring an aggressive stock profile for tight target groupings.',
-    imageSrc: '/assets/weapons/viper.png',
+    category: '10m Competition Pistol',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '237 mm',
+    weight: '1 kg',
+    velocity: '500 fps (Adjustable)',
+    description: 'AP-X is a Latch action Pre-Charged Pneumatic Air Pistol for amateur and professional shooters. It has a short barrel and comes with open sights.',
+    imageSrc: '/assets/weapons/ap-x.webp',
+    thumbSrc: '/assets/weapons/ap-x-thumb.webp',
   },
   {
     id: 'gm10-club',
     name: 'GM10 CLUB',
     manufacturer: 'GARE',
     category: '10m Competition Rifle',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '450 mm',
-    weight: '3.6 kg',
-    velocity: '170 m/s',
-    description: 'Entry match 10m target air rifle tailored for developing shooters entering formal competition.',
-    imageSrc: '/assets/weapons/gm10-club.png',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '480 mm',
+    weight: '2.3 kg',
+    velocity: '500 fps (10.34 gr pellet)',
+    description: 'The GM-10 Club is an entry level Pre-Charged Pneumatic Air Rifle designed for club use. It has peep sights which may be easily changed with open sights, if required. The stock is ambidextrous.',
+    imageSrc: '/assets/weapons/gm10-club.webp',
+    thumbSrc: '/assets/weapons/gm10-club-thumb.webp',
   },
   {
-    id: 'ap-x',
-    name: 'AP-X',
+    id: 'viper',
+    name: 'VIPER',
     manufacturer: 'GARE',
-    category: '10m Competition Pistol',
-    calibre: '.177 / 4.5mm',
-    barrelLength: '230 mm',
-    weight: '0.95 kg',
-    velocity: '150 m/s',
-    description: 'ISSF-legal 10m match air pistol engineered for one-handed balance, micro recoil absorption, and razor sight stability.',
-    imageSrc: '/assets/weapons/ap-x.png',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '480 mm',
+    weight: '2.3 kg',
+    velocity: '850 fps (10.34 gr pellet)',
+    description: 'Viper is a latch action PCP Air Rifle built on the sturdy GM-10 platform. It features 480 mm barrel with 12 grooves. The highlight of this model is the all weather synthetic stock which is light, sturdy and ambidextrous. Viper is available in both suppressed as well as open sight options.',
+    imageSrc: '/assets/weapons/viper.webp',
+    thumbSrc: '/assets/weapons/viper-thumb.webp',
+  },
+  {
+    id: 'g10-karbin',
+    name: 'G10 KARBIN',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '480 mm',
+    weight: '2.6 kg',
+    velocity: '850 fps (10.34 pellet)',
+    description: 'Karbin is an ultra-compact, precision Pre-Charged Pneumatic airgun from Gandiva Advanced Research and Equipments Pvt Ltd. It is built on the sturdy and reliable GM-10 platform with an extended trigger assembly and compact stock to enable accurate shooting from enclosed areas where a full length rifle is hard to manoeuvre. The rifle comes with a factory fitted Picatinny rail mount for mounting telescopic sights. The factory fit suppressor ensures a reduced sound report. Karbin comes in a variety of colour options and the stock design is ambidextrous.',
+    imageSrc: '/assets/weapons/g10-karbin.webp',
+    thumbSrc: '/assets/weapons/g10-karbin-thumb.webp',
+  },
+  {
+    id: 'theseus',
+    name: 'THESEUS',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '550 mm',
+    weight: '4.1 kg',
+    velocity: '850 fps (10.34 gr pellet)',
+    description: 'Theseus is a handy, compact, fully regulated and suppressed PCP air weapon from GARE featuring 550mm barrel for accuracy, 650 cc air reservoir - capable of 180 shots in one refill. Ideal for fun plinking. The gun comes with picattiny scope rail to mount scope and adjustable two stage trigger.',
+    imageSrc: '/assets/weapons/theseus.webp',
+    thumbSrc: '/assets/weapons/theseus-thumb.webp',
+  },
+  {
+    id: 'bhim',
+    name: 'BHIM',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '480 mm',
+    weight: '4.2 kg',
+    velocity: '850 fps (10.34 gr pellet)',
+    description: 'BHIM is a latch action Pre-Charged Pneumatic Air Rifle with a large reservoir and provides the largest number of shots per fill among any Indian made PCP. The Airgun is also factory fit with a suppressor which provides reduced sound report.',
+    imageSrc: '/assets/weapons/bhim.webp',
+    thumbSrc: '/assets/weapons/bhim-thumb.webp',
+  },
+  {
+    id: 'falcon-thumbhole',
+    name: 'FALCON THUMBHOLE STOCK',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '550 mm',
+    weight: '4.2 kg',
+    velocity: '850 fps (10.34 gr pellet)',
+    description: "Falcon is a long range bench rest rifle from GARE. It has a 550 mm rifled barrel—the longest among any Indian made air weapon. The thumbhole stock and lever type safety add to its uniqueness. The Falcon is every air gun lover's dream of a long range precision air weapon.",
+    imageSrc: '/assets/weapons/falcon-thumbhole.webp',
+    thumbSrc: '/assets/weapons/falcon-thumbhole-thumb.webp',
+  },
+  {
+    id: 'falcon-beechwood',
+    name: 'FALCON BEECH WOOD STOCK',
+    manufacturer: 'GARE',
+    category: '10m Competition Rifle',
+    calibre: '0.177" / 4.5 mm',
+    barrelLength: '550 mm',
+    weight: '4.2 kg',
+    velocity: '850 fps (10.34 gr pellet)',
+    description: "Falcon is a long range bench rest rifle from GARE. It has a 550 mm rifled barrel—the longest among any Indian made air weapon. The beech wood stock and lever type safety add to its uniqueness. The Falcon is every air gun lover's dream of a long range precision air weapon.",
+    imageSrc: '/assets/weapons/falcon-beechwood.webp',
+    thumbSrc: '/assets/weapons/falcon-beechwood-thumb.webp',
   },
 ];
 
@@ -263,7 +264,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             {/* NCC RVCE Logo & Label */}
             <div className="flex items-center gap-2">
               <img 
-                src="/assets/logos/NCC Logo.png" 
+                src="/assets/logos/NCC Logo.webp" 
                 alt="NCC RVCE Logo" 
                 className="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(220,38,38,0.4)]"
               />
@@ -277,7 +278,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
             {/* GARE Logo & Label */}
             <div className="flex items-center gap-2">
               <img 
-                src="/assets/logos/GARE Logo.png" 
+                src="/assets/logos/GARE Logo.webp" 
                 alt="GARE Logo" 
                 className="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.2)]"
               />
@@ -533,7 +534,13 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
                 >
                   {/* Thumbnail Image */}
                   <div className="w-full h-20 bg-[#05060A] rounded-lg p-2 mb-2 flex items-center justify-center border border-[#161724]">
-                    <img src={weapon.imageSrc} alt={weapon.name} className="max-h-full max-w-full object-contain" />
+                    <img
+                      src={weapon.thumbSrc || weapon.imageSrc}
+                      alt={weapon.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </div>
 
                   {/* Thumbnail Details */}

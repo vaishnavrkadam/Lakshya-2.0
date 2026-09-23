@@ -1,8 +1,7 @@
-import jsPDF from 'jspdf';
 import { CertificateConfig, DEFAULT_CERTIFICATE_CONFIG, getSavedCertificateConfig } from '../config/certificateConfig';
 
-const TEMPLATE_URL = '/assets/certificates/certificate_template_2x.png';
-const FALLBACK_TEMPLATE_URL = '/assets/certificates/certificate_template.png';
+const TEMPLATE_URL = '/assets/certificates/certificate_template_2x.webp';
+const FALLBACK_TEMPLATE_URL = '/assets/certificates/certificate_template.webp';
 
 // In-memory cache for the loaded HTMLImageElement
 let cachedTemplateImage: HTMLImageElement | null = null;
@@ -154,7 +153,8 @@ export async function renderCertificateToCanvas(
 export async function generateCertificatePdf(
   participantName: string,
   config: CertificateConfig = getSavedCertificateConfig()
-): Promise<jsPDF> {
+): Promise<any> {
+  const { default: jsPDF } = await import('jspdf');
   // Create offscreen canvas
   const canvas = document.createElement('canvas');
   await renderCertificateToCanvas(participantName, config, canvas);
@@ -194,6 +194,7 @@ export async function generateBulkCertificatesPdf(
   onProgress?: (current: number, total: number, currentName: string) => void
 ): Promise<void> {
   if (participants.length === 0) return;
+  const { default: jsPDF } = await import('jspdf');
 
   const doc = new jsPDF({
     orientation: 'landscape',

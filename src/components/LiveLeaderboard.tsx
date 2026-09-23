@@ -33,37 +33,23 @@ export default function LiveLeaderboard() {
       setLoading(false);
     };
 
-    // 1. Primary path based on APP_ID
+    // Canonical path based on APP_ID
     const colRef = getColRef('leaderboard_entries');
     const q1 = query(colRef, where('vertical', '==', selectedVertical));
-    const unsub1 = onSnapshot(q1, (snapshot) => {
-      snapshot.docs.forEach((d) => {
-        entriesMap.set(d.id, { id: d.id, ...(d.data() as any) });
-      });
-      updateCombined();
+    const unsub = onSnapshot(q1, (snapshot) => {
+      const items: LeaderboardEntry[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      }));
+      setRawEntries(items);
+      setLoading(false);
     }, (err) => {
-      console.error("Error loading primary leaderboard:", err);
+      console.error("Error loading leaderboard:", err);
       setLoading(false);
     });
 
-    // 2. Fallback alternate path
-    const altAppId = APP_ID === 'lakshya-02' 
-      ? '1:205566133235:web:691e34c3cd87d984980886' 
-      : 'lakshya-02';
-    const altColRef = collection(db, `artifacts/${altAppId}/public/data/leaderboard_entries`);
-    const q2 = query(altColRef, where('vertical', '==', selectedVertical));
-    const unsub2 = onSnapshot(q2, (snapshot) => {
-      snapshot.docs.forEach((d) => {
-        entriesMap.set(d.id, { id: d.id, ...(d.data() as any) });
-      });
-      updateCombined();
-    }, () => {
-      // Alternate collection might be empty/unused; ignore
-    });
-
     return () => {
-      unsub1();
-      unsub2();
+      unsub();
     };
   }, [selectedVertical]);
 

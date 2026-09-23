@@ -44,4 +44,4 @@ functions/lib/
 # Unused generated directories
 src/dataconnect-generated/
 .system_generated/
-logos/
+/logos/

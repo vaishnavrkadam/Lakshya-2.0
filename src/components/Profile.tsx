@@ -25,10 +25,13 @@ import {
 import { REGISTRATION_FORM_URL, normalizeEmail } from '../config/lakshya';
 import { downloadCertificatePdf, renderCertificateToCanvas, sanitizeCertificateFilename } from '../lib/certificates';
 import { getSavedCertificateConfig } from '../config/certificateConfig';
-import { getDocRef, getColRef, onSnapshot } from '../lib/firebase';
+import { getDocRef, getColRef, getDocs, onSnapshot } from '../lib/firebase';
 import type { CertificateRequest, Booking, LeaderboardEntry } from '../types/lakshya';
 import { computeRankedLeaderboard } from '../lib/ranking';
 import CertificateRequestModal from './CertificateRequestModal';
+
+let cachedLeaderboardData: { entries: LeaderboardEntry[]; timestamp: number } | null = null;
+const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
 
 export default function Profile({ setView }: { setView: (v: string) => void }) {
   const { currentUser, registration, userBookings, logout, loginWithGoogle, setOnboardingOpen } = useAuth();
@@ -38,19 +41,29 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const certCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Subscribe to leaderboard entries to display official score and live rank
-  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  // Fetch leaderboard entries to display official score and live rank with client-side cache
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>(() => {
+    return cachedLeaderboardData?.entries || [];
+  });
 
   useEffect(() => {
+    const now = Date.now();
+    if (cachedLeaderboardData && (now - cachedLeaderboardData.timestamp < LEADERBOARD_CACHE_TTL_MS)) {
+      setLeaderboardEntries(cachedLeaderboardData.entries);
+      return;
+    }
+
     const colRef = getColRef<LeaderboardEntry>('leaderboard_entries');
-    const unsub = onSnapshot(colRef, (snap) => {
-      const list: LeaderboardEntry[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as LeaderboardEntry));
-      setLeaderboardEntries(list);
-    }, (err) => {
-      console.error("Failed to load leaderboard entries in profile:", err);
-    });
-    return () => unsub();
+    getDocs(colRef)
+      .then((snap) => {
+        const list: LeaderboardEntry[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as LeaderboardEntry));
+        cachedLeaderboardData = { entries: list, timestamp: Date.now() };
+        setLeaderboardEntries(list);
+      })
+      .catch((err) => {
+        console.error("Failed to load leaderboard entries in profile:", err);
+      });
   }, []);
 
   const rankedRifle = useMemo(() => {

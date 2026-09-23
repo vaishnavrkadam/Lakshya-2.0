@@ -1,15 +1,15 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { Slot, Booking, Registration } from '../types/lakshya';
 
 /**
  * Generates and downloads the Slot Roster PDF
  */
-export function generateSlotRostersPdf(
+export async function generateSlotRostersPdf(
   slots: Slot[],
   bookings: Booking[],
   selectedVertical?: string
 ) {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF('p', 'mm', 'a4');
   const now = new Date().toLocaleString();
 
@@ -85,11 +85,13 @@ export function generateSlotRostersPdf(
  * Generates and downloads the Registered But Not Booked PDF
  * Contains strictly: Serial Number (S.No) and Shooter Name
  */
-export function generateUnbookedRegistrationsPdf(
+export async function generateUnbookedRegistrationsPdf(
   registrations: Registration[],
   bookings: Booking[],
   verticalFilter: 'all' | 'Air Rifle' | 'Air Pistol' = 'all'
 ) {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF('p', 'mm', 'a4');
   const now = new Date().toLocaleString();
 
@@ -178,7 +180,9 @@ export function generateUnbookedRegistrationsPdf(
 /**
  * Generates and downloads the Slot Occupancy PDF
  */
-export function generateOccupancyPdf(slots: Slot[], bookings: Booking[]) {
+export async function generateOccupancyPdf(slots: Slot[], bookings: Booking[]) {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF('p', 'mm', 'a4');
   const now = new Date().toLocaleString();
 

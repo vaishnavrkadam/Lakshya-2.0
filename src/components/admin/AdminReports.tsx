@@ -35,16 +35,16 @@ export default function AdminReports({ slots, bookings, registrations }: AdminRe
   const [selectedVerticalRoster, setSelectedVerticalRoster] = useState<string>('All');
   const [unbookedFilter, setUnbookedFilter] = useState<'all' | 'Air Rifle' | 'Air Pistol'>('all');
 
-  const handleDownloadRoster = () => {
-    generateSlotRostersPdf(slots, bookings, selectedVerticalRoster);
+  const handleDownloadRoster = async () => {
+    await generateSlotRostersPdf(slots, bookings, selectedVerticalRoster);
   };
 
-  const handleDownloadUnbooked = () => {
-    generateUnbookedRegistrationsPdf(registrations, bookings, unbookedFilter);
+  const handleDownloadUnbooked = async () => {
+    await generateUnbookedRegistrationsPdf(registrations, bookings, unbookedFilter);
   };
 
-  const handleDownloadOccupancy = () => {
-    generateOccupancyPdf(slots, bookings);
+  const handleDownloadOccupancy = async () => {
+    await generateOccupancyPdf(slots, bookings);
   };
 
   // CSV Data Exports
