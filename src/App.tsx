@@ -34,9 +34,20 @@ const ViewFallback = () => (
   </div>
 );
 
+const VALID_VIEWS = ['overview', 'slot-booking', 'digital-pass', 'live-leaderboard', 'profile', 'admin'];
+
+function getViewFromUrl(): string {
+  if (typeof window === 'undefined') return 'overview';
+  const hash = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+  if (VALID_VIEWS.includes(hash)) return hash;
+  const path = window.location.pathname.replace(/^\//, '').trim().toLowerCase();
+  if (VALID_VIEWS.includes(path)) return path;
+  return 'overview';
+}
+
 function MainApp() {
-  const { isAdmin } = useAuth();
-  const [currentView, setView] = useState<string>('overview');
+  const { isAdmin, currentUser } = useAuth();
+  const [currentView, setCurrentView] = useState<string>(getViewFromUrl);
   const [adminTab, setAdminTab] = useState<string>('dashboard');
 
   // Admin global data stores (strictly active only when admin is logged in)
@@ -82,11 +93,52 @@ function MainApp() {
     };
   }, [isAdmin]);
 
-  useEffect(() => {
-    if (isAdmin) {
-      setView('admin');
+  const setView = (newView: string) => {
+    if (newView === currentView) return;
+    setCurrentView(newView);
+    if (window.location.hash.replace(/^#\/?/, '') !== newView) {
+      window.location.hash = newView;
     }
-  }, [isAdmin]);
+  };
+
+  // Sync URL hash changes (browser Back/Forward navigation and direct navigation)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const v = getViewFromUrl();
+      setCurrentView(v);
+    };
+
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
+
+  // Post-login redirect handler
+  useEffect(() => {
+    if (currentUser) {
+      if (isAdmin) {
+        setView('admin');
+      } else {
+        try {
+          const intended = sessionStorage.getItem('lakshya_intended_view');
+          if (intended && VALID_VIEWS.includes(intended)) {
+            sessionStorage.removeItem('lakshya_intended_view');
+            setView(intended);
+          }
+        } catch (_) {}
+      }
+    }
+  }, [currentUser, isAdmin]);
+
+  // If non-admin is currently on 'admin' view (e.g. after logout or direct URL nav), redirect to overview
+  useEffect(() => {
+    if (!isAdmin && currentView === 'admin') {
+      setView('overview');
+    }
+  }, [isAdmin, currentView]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0B0C10] text-[#F8FAFC]">

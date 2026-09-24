@@ -39,26 +39,16 @@ export function AuthProvider({ children }) {
 
         // Realtime listener for registration status
         const regRef = getDocRef('registrations', cleanEmail);
-        unsubscribeRegistration = onSnapshot(regRef, async (docSnap) => {
+        unsubscribeRegistration = onSnapshot(regRef, (docSnap) => {
           if (docSnap.exists() && docSnap.data()?.eligible !== false) {
             setRegistration({ id: docSnap.id, ...docSnap.data() });
             setOnboardingOpen(false);
-            setLoading(false);
           } else {
-            // User was deleted or is ineligible
+            // User is unrostered or ineligible
             setRegistration(null);
             setUserBookings([]);
-            setLoading(false);
-
-            if (!isAdminEmail(cleanEmail)) {
-              // Automatically invalidate authentication session for deleted/unregistered users
-              setCurrentUser(null);
-              setOnboardingOpen(true);
-              try {
-                await signOut(auth);
-              } catch (_) {}
-            }
           }
+          setLoading(false);
         }, (error) => {
           console.error("Error fetching registration:", error);
           setLoading(false);
@@ -91,12 +81,21 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (intendedView?: string) => {
+    if (intendedView) {
+      try {
+        sessionStorage.setItem('lakshya_intended_view', intendedView);
+      } catch (_) {}
+    }
     try {
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+        // User closed or cancelled the popup dialog gracefully
+        return null;
+      }
       console.error("Login failed:", error);
       throw error;
     } finally {

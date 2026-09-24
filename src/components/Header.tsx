@@ -184,7 +184,13 @@ export default function Header({ currentView, setView }: HeaderProps) {
               </div>
             ) : (
               <button
-                onClick={loginWithGoogle}
+                onClick={() => {
+                  if (currentView === 'slot-booking' || currentView === 'digital-pass') {
+                    loginWithGoogle(currentView);
+                  } else {
+                    loginWithGoogle();
+                  }
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-[#DC2626] hover:text-[#F8FAFC] hover:bg-[#DC2626]/15 font-mono text-xs uppercase tracking-wider transition-colors rounded shrink-0 font-bold"
               >
                 <LogIn className="w-4 h-4 text-[#DC2626]" />
@@ -310,7 +316,11 @@ export default function Header({ currentView, setView }: HeaderProps) {
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  loginWithGoogle();
+                  if (currentView === 'slot-booking' || currentView === 'digital-pass') {
+                    loginWithGoogle(currentView);
+                  } else {
+                    loginWithGoogle();
+                  }
                 }}
                 className="w-full py-2 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider text-center rounded flex items-center justify-center gap-2"
               >

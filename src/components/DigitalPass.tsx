@@ -25,7 +25,7 @@ import { normalizeEmail } from '../config/lakshya';
 import CertificateRequestModal from './CertificateRequestModal';
 
 export default function DigitalPass({ setView }: { setView: (v: string) => void }) {
-  const { currentUser, userBookings, registration, loginWithGoogle } = useAuth();
+  const { currentUser, userBookings, registration, loading, loginWithGoogle, logout } = useAuth();
   const [isDownloadingCert, setIsDownloadingCert] = useState(false);
   const [certRequest, setCertRequest] = useState<CertificateRequest | null>(null);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
@@ -71,17 +71,30 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#DC2626] border-t-transparent rounded-full animate-spin"></div>
+          <span className="font-mono text-xs text-[#64748B] uppercase tracking-wider">
+            RETRIEVING DIGITAL CREDENTIALS...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
-      <div className="max-w-md mx-auto my-20 p-8 bg-[#12131A] border border-[#282B3A] text-center space-y-4">
+      <div className="max-w-md mx-auto my-20 p-8 bg-[#12131A] border border-[#282B3A] text-center space-y-4 rounded-xl shadow-xl">
         <Ticket className="w-12 h-12 text-[#DC2626] mx-auto opacity-80" />
         <h2 className="font-headline-sm text-2xl text-[#F8FAFC] uppercase font-serif">Sign In Required</h2>
         <p className="font-mono text-xs text-[#64748B]">
           Log in with your registered Google account to retrieve and display your official firing range digital pass.
         </p>
         <button
-          onClick={loginWithGoogle}
-          className="px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-colors"
+          onClick={() => loginWithGoogle('digital-pass')}
+          className="px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-colors rounded"
         >
           [ Sign In with Google ]
         </button>
@@ -89,9 +102,57 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
     );
   }
 
+  if (currentUser && (!registration || !registration.eligible)) {
+    return (
+      <div className="max-w-2xl mx-auto my-16 p-8 bg-[#12131A] border-2 border-[#DC2626]/70 text-center space-y-6 rounded-2xl shadow-[0_0_40px_rgba(220,38,38,0.2)]">
+        <div className="w-16 h-16 rounded-2xl bg-red-950/60 border border-red-700/80 flex items-center justify-center mx-auto text-[#EF4444]">
+          <Ticket className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <span className="font-mono text-[10px] tracking-widest uppercase px-2.5 py-0.5 bg-red-950/80 border border-red-800 text-red-300 font-bold rounded">
+            PASS RETRIEVAL RESTRICTED
+          </span>
+          <h2 className="font-headline-sm text-2xl text-[#F8FAFC] uppercase font-serif">
+            Pre-Registration Required
+          </h2>
+          <p className="font-mono text-xs text-[#94A3B8]">
+            Digital passes with encrypted QR tokens are strictly issued to verified competitors.
+          </p>
+        </div>
+        <div className="p-4 bg-[#0B0C10] border border-[#282B3A] rounded-xl text-xs font-mono space-y-2 text-left">
+          <div className="flex justify-between">
+            <span className="text-[#64748B]">AUTHENTICATED:</span>
+            <span className="text-[#F8FAFC] font-bold">{currentUser.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#64748B]">STATUS:</span>
+            <span className="text-red-400 font-bold">UNREGISTERED / NOT ON ROSTER</span>
+          </div>
+          <p className="text-[11px] text-[#A0AEC0] border-t border-[#1F2430] pt-2">
+            Please consider <strong>On-Spot Registration</strong> on the event day (26 & 27 September 2026) at Gandiva Aero-Pneumatic Range (GARE), RVCE.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => setView('overview')}
+            className="w-full sm:w-auto px-6 py-2.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold rounded"
+          >
+            [ Return to Home ]
+          </button>
+          <button
+            onClick={logout}
+            className="w-full sm:w-auto px-5 py-2.5 border border-red-900/60 hover:bg-red-950/40 text-red-400 font-mono text-xs uppercase tracking-wider rounded"
+          >
+            Sign In with Different Account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (confirmedBookings.length === 0) {
     return (
-      <div className="max-w-xl mx-auto my-20 p-8 bg-[#12131A] border border-[#282B3A] text-center space-y-5">
+      <div className="max-w-xl mx-auto my-20 p-8 bg-[#12131A] border border-[#282B3A] text-center space-y-5 rounded-xl shadow-xl">
         <div className="w-14 h-14 rounded-full bg-[#1A1C26] border border-[#282B3A] flex items-center justify-center mx-auto text-[#64748B]">
           <Ticket className="w-7 h-7 text-[#DC2626]" />
         </div>
@@ -104,7 +165,7 @@ export default function DigitalPass({ setView }: { setView: (v: string) => void 
         <div className="pt-2">
           <button
             onClick={() => setView('slot-booking')}
-            className="px-6 py-3 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg flex items-center gap-2 mx-auto"
+            className="px-6 py-3 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold shadow-lg flex items-center gap-2 mx-auto rounded"
           >
             <span>[ Book Your Firing Slot ]</span>
             <ArrowRight className="w-4 h-4" />

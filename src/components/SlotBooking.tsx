@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 export default function SlotBooking({ setView }: { setView: (v: string) => void }) {
-  const { currentUser, registration, userBookings, loginWithGoogle, setOnboardingOpen } = useAuth();
+  const { currentUser, registration, userBookings, loading, loginWithGoogle, logout, setOnboardingOpen } = useAuth();
   
   const [selectedVertical, setSelectedVertical] = useState<LakshyaVertical>('Air Rifle');
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -115,12 +115,11 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
   // Trigger booking confirmation flow
   const handleInitiateBooking = () => {
     if (!currentUser || !currentUser.email) {
-      loginWithGoogle();
+      loginWithGoogle('slot-booking');
       return;
     }
 
     if (!registration || !registration.eligible) {
-      setOnboardingOpen(true);
       return;
     }
 
@@ -303,6 +302,154 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
     slotsByDate[key].push(s);
   });
 
+  // 1. Initial Auth / Data Loading State
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#DC2626] border-t-transparent rounded-full animate-spin"></div>
+          <span className="font-mono text-xs text-[#64748B] uppercase tracking-wider">
+            VERIFYING PARTICIPANT CREDENTIALS...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated State
+  if (!currentUser) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 space-y-6 text-center">
+        <div className="bg-[#12131A] border border-[#282B3A] p-8 sm:p-10 rounded-2xl shadow-xl space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#1A1C26] border border-[#DC2626]/60 flex items-center justify-center mx-auto text-[#DC2626]">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#DC2626] font-bold">
+              AUTHENTICATION REQUIRED
+            </span>
+            <h1 className="font-headline-sm text-2xl sm:text-3xl text-[#F8FAFC] uppercase font-serif">
+              Sign In to Access Slot Booking
+            </h1>
+            <p className="font-mono text-xs text-[#94A3B8] max-w-md mx-auto">
+              Please sign in with your registered Google account to verify your competitor roster credentials and book your 10M firing slot.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={() => loginWithGoogle('slot-booking')}
+              className="px-8 py-3.5 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold transition-all shadow-[0_0_25px_rgba(220,38,38,0.4)] rounded hover:scale-105 active:scale-95"
+            >
+              [ Sign In with Google ]
+            </button>
+          </div>
+          <div className="text-[11px] font-mono text-[#64748B]">
+            Not pre-registered yet? You can still attend for on-spot registration on the event day.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Unregistered / Ineligible User Dedicated Warning Page
+  if (currentUser && (!registration || !registration.eligible)) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16 space-y-6">
+        <div className="bg-[#12131A] border-2 border-[#DC2626]/70 rounded-2xl p-6 sm:p-10 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden text-center sm:text-left">
+          {/* Top Tactical Accent Strip */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#DC2626] via-amber-500 to-[#DC2626]"></div>
+
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 border-b border-[#282B3A] pb-6">
+            <div className="w-16 h-16 rounded-2xl bg-red-950/60 border border-red-700/80 flex items-center justify-center shrink-0 text-[#EF4444] shadow-lg">
+              <ShieldAlert className="w-9 h-9" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span className="font-mono text-[10px] tracking-widest uppercase px-2.5 py-0.5 bg-red-950/80 border border-red-800 text-red-300 font-bold rounded">
+                  ACCESS PROTOCOL · RESTRICTED
+                </span>
+                <span className="font-mono text-[10px] tracking-widest uppercase px-2.5 py-0.5 bg-amber-950/60 border border-amber-800/80 text-amber-300 font-bold rounded">
+                  PRE-REGISTRATION NOT FOUND
+                </span>
+              </div>
+              <h1 className="font-headline-sm text-2xl sm:text-3xl text-[#F8FAFC] uppercase font-serif mt-2">
+                Participant Not Pre-Registered
+              </h1>
+              <p className="font-mono text-xs text-[#94A3B8]">
+                Online slot booking is reserved exclusively for pre-registered competitors.
+              </p>
+            </div>
+          </div>
+
+          {/* Dossier status box */}
+          <div className="mt-6 p-4 sm:p-5 bg-[#0B0C10] border border-[#282B3A] rounded-xl space-y-3 font-mono text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[#94A3B8]">
+              <span className="text-[10px] uppercase text-[#64748B]">AUTHENTICATED GOOGLE ID:</span>
+              <span className="font-bold text-[#F8FAFC]">{currentUser.email}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[#94A3B8]">
+              <span className="text-[10px] uppercase text-[#64748B]">ROSTER STATUS:</span>
+              <span className="font-bold text-red-400">UNREGISTERED / INELIGIBLE</span>
+            </div>
+            <p className="text-[11px] text-[#A0AEC0] border-t border-[#1F2430] pt-2 leading-relaxed">
+              Your Google account is authenticated, but this email address was not found in the verified pre-registration roster for Lakshya 2.0. Online lane reservation and registered participant tools are locked for unregistered accounts.
+            </p>
+          </div>
+
+          {/* High-Visibility On-Spot Registration Notice */}
+          <div className="mt-6 p-5 bg-gradient-to-br from-[#1A1813] to-[#12131A] border-2 border-amber-500/60 rounded-xl space-y-3 shadow-lg">
+            <div className="flex items-center gap-2.5 text-amber-400">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <h2 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider">
+                Consider On-Spot Registration on Event Day
+              </h2>
+            </div>
+            <p className="font-mono text-xs text-[#E2E8F0] leading-relaxed">
+              Did not complete online pre-registration in advance? You can still participate in Lakshya 2.0! 
+              Please visit the <strong>On-Spot Registration Desk</strong> in person on the event day itself at the 
+              <strong> Gandiva Aero-Pneumatic Range (GARE), RVCE</strong>.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-[11px] font-mono text-[#CBD5E1]">
+              <div className="p-2.5 bg-[#0B0C10]/80 border border-[#282B3A] rounded">
+                <span className="text-[#64748B] block text-[9px] uppercase">EVENT DATES:</span>
+                <span className="font-bold text-[#F8FAFC]">26 & 27 September 2026</span>
+              </div>
+              <div className="p-2.5 bg-[#0B0C10]/80 border border-[#282B3A] rounded">
+                <span className="text-[#64748B] block text-[9px] uppercase">ALLOCATION POLICY:</span>
+                <span className="font-bold text-amber-300">First-Come, First-Served (Lane Capacity)</span>
+              </div>
+            </div>
+            <p className="text-[10px] font-mono text-amber-400/90 italic">
+              * Note: On-spot entries are subject to lane availability on the day of the championship.
+            </p>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={() => setView('overview')}
+              className="w-full sm:w-auto px-6 py-3 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-bold transition-all shadow-md rounded"
+            >
+              [ Return to Event Overview ]
+            </button>
+            <button
+              onClick={() => setView('live-leaderboard')}
+              className="w-full sm:w-auto px-6 py-3 bg-[#1A1C26] hover:bg-[#282B3A] border border-[#282B3A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-all rounded"
+            >
+              [ View Live Standings ]
+            </button>
+            <button
+              onClick={logout}
+              className="w-full sm:w-auto px-5 py-3 border border-red-900/60 hover:bg-red-950/40 text-red-400 font-mono text-xs uppercase tracking-wider transition-all rounded"
+            >
+              Sign In with Different Account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Title & Range Selector Header */}
@@ -391,42 +538,6 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
               <span>[ View My Participant Pass ]</span>
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Auth / Eligibility Alerts */}
-      {!currentUser && (
-        <div className="bg-[#12131A] border border-[#282B3A] p-5 flex flex-col sm:flex-row items-center justify-between gap-4 rounded">
-          <div className="flex items-center gap-3">
-            <Lock className="w-5 h-5 text-[#F59E0B]" />
-            <div className="text-xs text-[#F8FAFC]/90">
-              Sign in with your registered Google account to view available range slots and book your firing ticket.
-            </div>
-          </div>
-          <button
-            onClick={loginWithGoogle}
-            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold transition-colors shrink-0 rounded"
-          >
-            [ Sign In with Google ]
-          </button>
-        </div>
-      )}
-
-      {currentUser && !registration && (
-        <div className="bg-red-950/40 border border-red-800/60 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 rounded">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
-            <div className="text-xs text-red-200 space-y-1">
-              <p className="font-bold text-sm text-[#F8FAFC]">Pre-Registration Record Required</p>
-              <p>Your signed-in email (<span className="font-mono text-[#F8FAFC]">{currentUser.email}</span>) is not yet on the approved participant roster.</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setOnboardingOpen(true)}
-            className="px-4 py-2 bg-[#DC2626] hover:bg-[#E51A1A] text-[#F8FAFC] font-mono text-xs uppercase tracking-widest font-semibold shrink-0 rounded"
-          >
-            [ Complete Intake Form ]
-          </button>
         </div>
       )}
 

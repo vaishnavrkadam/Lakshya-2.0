@@ -194,13 +194,10 @@ export default function Profile({ setView }: { setView: (v: string) => void }) {
                 VERIFIED ROSTER
               </span>
             ) : (
-              <button
-                onClick={() => setOnboardingOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-950/50 border border-red-800 text-red-400 text-xs font-mono font-semibold hover:bg-red-900/50"
-              >
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/50 border border-amber-800 text-amber-400 text-xs font-mono font-semibold">
                 <AlertCircle className="w-3.5 h-3.5" />
-                UNROSTERED — COMPLETE FORM
-              </button>
+                UNREGISTERED — ON-SPOT REGISTRATION
+              </span>
             )}
           </div>
         </div>

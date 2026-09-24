@@ -190,9 +190,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
   // 1. Slot Booking CTA Handler
   const handleBookingCta = () => {
     if (!currentUser) {
-      loginWithGoogle();
-    } else if (!registration || !registration.eligible) {
-      setOnboardingOpen(true);
+      loginWithGoogle('slot-booking');
     } else {
       setView('slot-booking');
     }
@@ -201,7 +199,7 @@ export default function Overview({ setView }: { setView: (v: string) => void }) 
   // 2. Retrieve Pass CTA Handler
   const handlePassCta = () => {
     if (!currentUser) {
-      loginWithGoogle();
+      loginWithGoogle('digital-pass');
     } else {
       setView('digital-pass');
     }

@@ -20,6 +20,7 @@ const ADMIN_EMAILS = new Set([
   'rvcecdtlokakshasridhar@gmail.com',
   'vaishnavkadam57@gmail.com',
   'vaishnavrkadam.cs25@rvce.edu.in',
+  'rvcecdtvaishnav@gmail.com',
 ]);
 
 type Vertical = 'Air Rifle' | 'Air Pistol';

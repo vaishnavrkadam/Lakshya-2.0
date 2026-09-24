@@ -23,6 +23,16 @@ service cloud.firestore {
       );
     }
 
+    function isRegistered(appId) {
+      return signedIn() && (
+        isAdmin() ||
+        (
+          exists(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())) &&
+          get(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())).data.eligible != false
+        )
+      );
+    }
+
     // Registrations collection (allowlist & intake roster)
     match /artifacts/{appId}/public/data/registrations/{registrationId} {
       allow read: if signedIn() && (
@@ -43,10 +53,11 @@ service cloud.firestore {
     // Slots collection (firing relays and capacities)
     match /artifacts/{appId}/public/data/slots/{slotId} {
       allow read: if true; // Publicly readable for schedule display
-      // Students can atomically reserve 1 slot seat within capacity; Admins have full management
+      // Registered eligible students can atomically reserve 1 slot seat within capacity; Admins have full management
       allow update: if signedIn() && (
         isAdmin() ||
         (
+          isRegistered(appId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'updatedAt']) &&
           request.resource.data.booked == resource.data.booked + 1 &&
           resource.data.booked < resource.data.capacity &&
@@ -64,28 +75,38 @@ service cloud.firestore {
         resource == null ||
         resource.data.participantEmail.lower() == normalizedEmail()
       );
-      // Students can create their own self-service confirmed booking
-      allow create, update: if signedIn() && (
+      // Only registered eligible students can create their own self-service confirmed booking
+      allow create: if signedIn() && (
         isAdmin() ||
-        (request.resource.data.participantEmail.lower() == normalizedEmail() &&
-         request.resource.data.checkedIn == false &&
-         request.resource.data.isDQ == false &&
-         request.resource.data.totalScore == null &&
-         !request.resource.data.slotId.matches('.*finals.*'))
+        (
+          isRegistered(appId) &&
+          request.resource.data.participantEmail.lower() == normalizedEmail() &&
+          request.resource.data.status == 'confirmed' &&
+          request.resource.data.checkedIn == false &&
+          request.resource.data.isDQ == false &&
+          request.resource.data.totalScore == null &&
+          !request.resource.data.slotId.matches('.*finals.*') &&
+          bookingId == 'lakshya-2026_' + normalizedEmail() + '_' + request.resource.data.vertical
+        )
       );
-      // Only Range Safety Officers / Admins can delete
-      allow delete: if isAdmin();
+      // Only Admins / Range Safety Officers can update or delete bookings
+      allow update, delete: if isAdmin();
     }
 
     // Leaderboard entries (public display and admin scoring)
     match /artifacts/{appId}/public/data/leaderboard_entries/{entryId} {
       allow read: if true; // Public display for live screens
-      // Students can initialize their 0-score booking entry; scoring is admin-only
-      allow create, update: if signedIn() && (
+      // Registered eligible students can initialize their 0-score booking entry; scoring is admin-only
+      allow create: if signedIn() && (
         isAdmin() ||
-        (request.resource.data.bestScore == 0 && request.resource.data.totalScore == 0)
+        (
+          isRegistered(appId) &&
+          request.resource.data.bestScore == 0 &&
+          request.resource.data.totalScore == 0 &&
+          entryId == 'lakshya-2026_' + normalizedEmail() + '_' + request.resource.data.vertical
+        )
       );
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // Scorecards collection (round-by-round official target shots)
@@ -112,6 +133,7 @@ service cloud.firestore {
       allow create: if signedIn() && (
         isAdmin() ||
         (
+          isRegistered(appId) &&
           request.resource.data.participantEmail.lower() == normalizedEmail() &&
           requestId.lower() == normalizedEmail() &&
           request.resource.data.status in ['Request Submitted', 'Under Review'] &&

@@ -1,5 +1,6 @@
 {
   "projects": {
+    "default": "lakshya-02",
     "lakshya": "lakshya-02"
   },
   "targets": {},
