@@ -210,7 +210,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         const qrToken = generateQrToken();
         const now = serverTimestamp();
 
-        const newBooking: Omit<Booking, 'id'> = {
+        const newBooking: Booking = {
+          id: bookingId,
           eventId: LAKSHYA_EVENT_ID,
           ticketId,
           qrToken,
@@ -240,6 +241,7 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         };
 
         const newLeaderboardEntry = {
+          id: bookingId,
           eventId: LAKSHYA_EVENT_ID,
           bookingId,
           ticketId,
@@ -286,6 +288,8 @@ export default function SlotBooking({ setView }: { setView: (v: string) => void 
         setBookingError("Your email was not found in the approved registrations roster.");
       } else if (err.message === "REGISTRATION_NOT_ELIGIBLE") {
         setBookingError("Your registration record is currently marked as ineligible.");
+      } else if (err?.code === 'permission-denied' || err?.message?.toLowerCase().includes('permission')) {
+        setBookingError("Permission error: Your account is either not registered or lacks permissions to reserve this lane. Please verify your registration or visit the on-spot registration desk.");
       } else {
         setBookingError(err.message || "Failed to confirm booking. Please try again.");
       }

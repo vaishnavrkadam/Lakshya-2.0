@@ -19,7 +19,9 @@ service cloud.firestore {
         normalizedEmail() == 'rvcecdtlokakshasridhar@gmail.com' ||
         normalizedEmail() == 'vaishnavkadam57@gmail.com' ||
         normalizedEmail() == 'vaishnavrkadam.cs25@rvce.edu.in' ||
-        normalizedEmail() == 'rvcecdtvaishnav@gmail.com'
+        normalizedEmail() == 'rvcecdtvaishnav@gmail.com' ||
+        normalizedEmail() == 'isirishetty06@gmail.com' ||
+        normalizedEmail() == 'katomsjnv@gmail.com'
       );
     }
 
@@ -28,7 +30,28 @@ service cloud.firestore {
         isAdmin() ||
         (
           exists(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())) &&
-          get(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())).data.eligible != false
+          (
+            !('eligible' in get(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())).data) ||
+            get(/databases/$(database)/documents/artifacts/$(appId)/public/data/registrations/$(normalizedEmail())).data.eligible != false
+          )
+        )
+      );
+    }
+
+    function isValidBookingId(id, email, vertical) {
+      return (
+        (vertical == 'Air Rifle' || vertical == 'air-rifle') && (
+          id == 'lakshya-2.0_' + email + '_air-rifle' ||
+          id == 'lakshya-2026_' + email + '_air-rifle' ||
+          id == 'lakshya-2.0_' + email + '_Air Rifle' ||
+          id == 'lakshya-2026_' + email + '_Air Rifle'
+        )
+      ) || (
+        (vertical == 'Air Pistol' || vertical == 'air-pistol') && (
+          id == 'lakshya-2.0_' + email + '_air-pistol' ||
+          id == 'lakshya-2026_' + email + '_air-pistol' ||
+          id == 'lakshya-2.0_' + email + '_Air Pistol' ||
+          id == 'lakshya-2026_' + email + '_Air Pistol'
         )
       );
     }
@@ -38,8 +61,11 @@ service cloud.firestore {
       allow read: if signedIn() && (
         isAdmin() || 
         resource == null ||
+        registrationId == normalizedEmail() ||
         registrationId.lower() == normalizedEmail() ||
+        resource.data.email == normalizedEmail() ||
         resource.data.email.lower() == normalizedEmail() ||
+        resource.data.rvceEmail == normalizedEmail() ||
         resource.data.rvceEmail.lower() == normalizedEmail()
       );
       // Students can update their own gender division
@@ -59,10 +85,16 @@ service cloud.firestore {
         (
           isRegistered(appId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'updatedAt']) &&
-          request.resource.data.booked == resource.data.booked + 1 &&
-          resource.data.booked < resource.data.capacity &&
-          resource.data.isActive == true &&
-          !slotId.matches('.*finals.*')
+          (
+            (!('booked' in resource.data) && request.resource.data.booked == 1) ||
+            request.resource.data.booked == resource.data.booked + 1
+          ) &&
+          (
+            (!('booked' in resource.data) && (!('capacity' in resource.data) || resource.data.capacity > 0)) ||
+            (!('capacity' in resource.data) || resource.data.booked < resource.data.capacity)
+          ) &&
+          (!('isActive' in resource.data) || resource.data.isActive == true) &&
+          !slotId.lower().matches('.*finals.*')
         )
       );
       allow create, delete: if isAdmin();
@@ -73,6 +105,7 @@ service cloud.firestore {
       allow read: if signedIn() && (
         isAdmin() ||
         resource == null ||
+        resource.data.participantEmail == normalizedEmail() ||
         resource.data.participantEmail.lower() == normalizedEmail()
       );
       // Only registered eligible students can create their own self-service confirmed booking
@@ -80,13 +113,13 @@ service cloud.firestore {
         isAdmin() ||
         (
           isRegistered(appId) &&
-          request.resource.data.participantEmail.lower() == normalizedEmail() &&
+          (request.resource.data.participantEmail == normalizedEmail() || request.resource.data.participantEmail.lower() == normalizedEmail()) &&
           request.resource.data.status == 'confirmed' &&
           request.resource.data.checkedIn == false &&
           request.resource.data.isDQ == false &&
           request.resource.data.totalScore == null &&
-          !request.resource.data.slotId.matches('.*finals.*') &&
-          bookingId == 'lakshya-2026_' + normalizedEmail() + '_' + request.resource.data.vertical
+          !request.resource.data.slotId.lower().matches('.*finals.*') &&
+          isValidBookingId(bookingId, normalizedEmail(), request.resource.data.vertical)
         )
       );
       // Only Admins / Range Safety Officers can update or delete bookings
@@ -103,7 +136,7 @@ service cloud.firestore {
           isRegistered(appId) &&
           request.resource.data.bestScore == 0 &&
           request.resource.data.totalScore == 0 &&
-          entryId == 'lakshya-2026_' + normalizedEmail() + '_' + request.resource.data.vertical
+          isValidBookingId(entryId, normalizedEmail(), request.resource.data.vertical)
         )
       );
       allow update, delete: if isAdmin();

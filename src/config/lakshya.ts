@@ -17,7 +17,9 @@ export const ADMIN_EMAILS: readonly string[] = [
   'rvcecdtlokakshasridhar@gmail.com',
   'vaishnavkadam57@gmail.com',
   'vaishnavrkadam.cs25@rvce.edu.in',
-  'rvcecdtvaishnav@gmail.com'
+  'rvcecdtvaishnav@gmail.com',
+  'isirishetty06@gmail.com',
+  'katomsjnv@gmail.com',
 ] as const;
 
 export const DEFAULT_SLOT_CAPACITY: Record<LakshyaVertical, number> = {
