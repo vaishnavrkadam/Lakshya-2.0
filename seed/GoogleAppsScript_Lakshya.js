@@ -32,8 +32,8 @@ const CONFIG = {
   // App ID namespace used in Firestore path: artifacts/{APP_ID}/public/data/registrations/{EMAIL}
   APP_ID: "lakshya-02",
   
-  // Web API Key for lakshya-02
-  API_KEY: "AIzaSyALWZz6wR6WI34lp6APtMnk05g9jEdIylY",
+  // Web API Key for lakshya-02 (Can also be set in Apps Script Project Settings -> Script Properties -> FIREBASE_API_KEY)
+  API_KEY: PropertiesService.getScriptProperties().getProperty("FIREBASE_API_KEY") || "YOUR_FIREBASE_API_KEY_HERE",
 
   // ============================================================================
   // ADMIN AUTHENTICATION (Fixes 403 PERMISSION_DENIED)
@@ -42,11 +42,11 @@ const CONFIG = {
   // 1. Go to Firebase Console (lakshya-02) -> Build -> Authentication -> "Sign-in method".
   // 2. Enable "Email/Password" provider.
   // 3. Go to "Users" tab -> Click "Add user".
-  // 4. Enter your admin email (e.g. vaishnavkadam57@gmail.com or nccrvce2025@gmail.com) and create an ADMIN_PASSWORD.
+  // 4. Enter your admin email (e.g. nccrvce2025@gmail.com) and create an ADMIN_PASSWORD.
   // 5. Enter the matching email & password below:
   // ============================================================================
-  ADMIN_EMAIL: "vaishnavkadam57@gmail.com",
-  ADMIN_PASSWORD: "YOUR_ADMIN_PASSWORD_HERE",
+  ADMIN_EMAIL: PropertiesService.getScriptProperties().getProperty("ADMIN_EMAIL") || "YOUR_ADMIN_EMAIL_HERE",
+  ADMIN_PASSWORD: PropertiesService.getScriptProperties().getProperty("ADMIN_PASSWORD") || "YOUR_ADMIN_PASSWORD_HERE",
   
   // Google Form Column Mapping (1-based index matching your Sheet columns):
   // [1] Timestamp, [2] Email Address, [3] Name, [4] RVCE Email ID, [5] Date of Birth, [6] Phone Number, [7] USN, [8] Branch, [9] Year of Study
