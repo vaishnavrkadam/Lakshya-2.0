@@ -31,7 +31,7 @@ export default defineConfig({
             if (id.includes('jspdf') || id.includes('jspdf-autotable') || id.includes('html2canvas')) {
               return 'vendor-pdf';
             }
-            if (id.includes('html5-qrcode') || id.includes('jsqr') || id.includes('qrcode.react')) {
+            if (id.includes('jsqr') || id.includes('qrcode.react')) {
               return 'vendor-qr';
             }
           }

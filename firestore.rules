@@ -38,9 +38,11 @@ service cloud.firestore {
       );
     }
 
-    function isValidBookingId(id, email, vertical) {
+    function isValidBookingId(appId, id, email, vertical) {
       return (
         (vertical == 'Air Rifle' || vertical == 'air-rifle') && (
+          id == appId + '_' + email + '_air-rifle' ||
+          id == appId + '_' + email + '_Air Rifle' ||
           id == 'lakshya-2.0_' + email + '_air-rifle' ||
           id == 'lakshya-2026_' + email + '_air-rifle' ||
           id == 'lakshya-2.0_' + email + '_Air Rifle' ||
@@ -48,6 +50,8 @@ service cloud.firestore {
         )
       ) || (
         (vertical == 'Air Pistol' || vertical == 'air-pistol') && (
+          id == appId + '_' + email + '_air-pistol' ||
+          id == appId + '_' + email + '_Air Pistol' ||
           id == 'lakshya-2.0_' + email + '_air-pistol' ||
           id == 'lakshya-2026_' + email + '_air-pistol' ||
           id == 'lakshya-2.0_' + email + '_Air Pistol' ||
@@ -119,7 +123,7 @@ service cloud.firestore {
           request.resource.data.isDQ == false &&
           request.resource.data.totalScore == null &&
           !request.resource.data.slotId.lower().matches('.*finals.*') &&
-          isValidBookingId(bookingId, normalizedEmail(), request.resource.data.vertical)
+          isValidBookingId(appId, bookingId, normalizedEmail(), request.resource.data.vertical)
         )
       );
       // Only Admins / Range Safety Officers can update or delete bookings
@@ -134,9 +138,10 @@ service cloud.firestore {
         isAdmin() ||
         (
           isRegistered(appId) &&
+          (request.resource.data.participantEmail == normalizedEmail() || request.resource.data.participantEmail.lower() == normalizedEmail()) &&
           request.resource.data.bestScore == 0 &&
           request.resource.data.totalScore == 0 &&
-          isValidBookingId(entryId, normalizedEmail(), request.resource.data.vertical)
+          isValidBookingId(appId, entryId, normalizedEmail(), request.resource.data.vertical)
         )
       );
       allow update, delete: if isAdmin();
@@ -148,11 +153,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Audit trail (immutable append-only)
+    // Audit trail (immutable append-only; written by Admin / Range Safety Officers)
     match /artifacts/{appId}/public/data/audit_logs/{auditId} {
       allow read: if isAdmin();
-      allow create: if signedIn();
+      allow create: if isAdmin();
       allow update, delete: if false;
+    }
+
+    // System settings (e.g., remote certificate layout configuration)
+    match /artifacts/{appId}/public/data/system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Certificate requests collection (sapling photo upload & admin approvals)
